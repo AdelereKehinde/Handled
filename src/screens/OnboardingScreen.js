@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,33 +8,34 @@ import {
   TouchableOpacity,
   Animated,
 } from 'react-native';
-import { Colors, Spacing, Radius } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../theme';
 import { PrimaryButton, DotProgress } from '../components/UI';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const SLIDES = [
   {
     id: '1',
-    emoji: '🌀',
     title: 'Overthinking\neverything?',
-    subtitle: 'Handled helps you decide —\ncalm, simple, instant.',
+    subtitle: 'Decisions made calm today',
+    icon: 'infinite',
     gradientTop: 'rgba(108,92,231,0.18)',
     gradientBottom: 'rgba(0,207,255,0.07)',
   },
   {
     id: '2',
-    emoji: '🌿',
     title: 'Let go of\nthe stress',
-    subtitle: 'We guide your choices so\nyou don't have to overthink.',
+    subtitle: 'Guidance that keeps moving',
+    icon: 'leaf-outline',
     gradientTop: 'rgba(0,207,255,0.14)',
     gradientBottom: 'rgba(108,92,231,0.08)',
   },
   {
     id: '3',
-    emoji: '✨',
     title: 'Just tap\nand relax',
-    subtitle: 'From food to life decisions —\nwe've got you.',
+    subtitle: 'Smart choices for you',
+    icon: 'sparkles-outline',
     gradientTop: 'rgba(108,92,231,0.2)',
     gradientBottom: 'rgba(0,214,143,0.07)',
   },
@@ -45,8 +46,9 @@ const SlideItem = ({ item }) => (
     <View style={[styles.blobTop, { backgroundColor: item.gradientTop }]} />
     <View style={[styles.blobBottom, { backgroundColor: item.gradientBottom }]} />
 
-    <View style={styles.emojiRing}>
-      <Text style={styles.emoji}>{item.emoji}</Text>
+    <View style={styles.iconWrap}>
+      <Ionicons name={item.icon} size={36} color={Colors.glow} />
+      <View style={styles.iconGlow} />
     </View>
 
     <Text style={styles.title}>{item.title}</Text>
@@ -61,7 +63,7 @@ export default function OnboardingScreen({ navigation }) {
 
   const goNext = () => {
     if (currentIndex < SLIDES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
+      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
       setCurrentIndex(currentIndex + 1);
     } else {
       navigation.replace('AuthEntry');
@@ -90,6 +92,14 @@ export default function OnboardingScreen({ navigation }) {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        getItemLayout={(_, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
+        onScrollToIndexFailed={({ index }) => {
+          flatListRef.current?.scrollToOffset({ offset: width * index, animated: true });
+        }}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
           { useNativeDriver: false }
@@ -102,7 +112,7 @@ export default function OnboardingScreen({ navigation }) {
         <DotProgress total={SLIDES.length} current={currentIndex} />
 
         <PrimaryButton
-          title={currentIndex === SLIDES.length - 1 ? "Let's Go 🌸" : 'Next'}
+          title={currentIndex === SLIDES.length - 1 ? "Let's Go" : 'Next'}
           onPress={goNext}
           style={styles.nextBtn}
         />
@@ -133,60 +143,65 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 32,
     paddingBottom: 160,
     overflow: 'hidden',
   },
   blobTop: {
     position: 'absolute',
-    width: 340,
-    height: 340,
-    borderRadius: 170,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
     top: -60,
     left: -80,
   },
   blobBottom: {
     position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
     bottom: 120,
     right: -60,
   },
-  emojiRing: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: 'rgba(108,92,231,0.15)',
+  iconWrap: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: 'rgba(108,92,231,0.12)',
     borderWidth: 1.5,
-    borderColor: 'rgba(108,92,231,0.3)',
+    borderColor: 'rgba(108,92,231,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: 26,
     shadowColor: '#6C5CE7',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 10,
   },
-  emoji: {
-    fontSize: 56,
+  iconGlow: {
+    position: 'absolute',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(0,207,255,0.12)',
+    zIndex: -1,
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
-    lineHeight: 42,
-    marginBottom: 18,
+    lineHeight: 40,
+    marginBottom: 12,
     letterSpacing: 0.3,
   },
   subtitle: {
-    fontSize: 17,
+    fontSize: 20,
     color: Colors.whiteAlpha60,
     textAlign: 'center',
-    lineHeight: 26,
-    fontWeight: '400',
+    lineHeight: 28,
+    fontWeight: '600',
   },
   footer: {
     position: 'absolute',

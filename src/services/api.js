@@ -1,6 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://127.0.0.1:8000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+
+const parseJsonSafe = (text) => {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
 
 const getToken = async () => {
   try {
@@ -31,13 +40,16 @@ const request = async (endpoint, options = {}) => {
     headers,
   });
 
-  const data = await response.json();
+  const text = await response.text();
+  const data = parseJsonSafe(text);
 
   if (!response.ok) {
-    throw new Error(data.detail || data.message || 'Something went wrong');
+    throw new Error(
+      (data && (data.detail || data.message)) || text || 'Something went wrong'
+    );
   }
 
-  return data;
+  return data ?? text;
 };
 
 export const authAPI = {
@@ -46,9 +58,12 @@ export const authAPI = {
       method: 'POST',
       body: formData, // multipart/form-data
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || data.message || 'Signup failed');
-    return data;
+    const text = await response.text();
+    const data = parseJsonSafe(text);
+    if (!response.ok) {
+      throw new Error((data && (data.detail || data.message)) || text || 'Signup failed');
+    }
+    return data ?? text;
   },
 
   login: async ({ email, password }) => {

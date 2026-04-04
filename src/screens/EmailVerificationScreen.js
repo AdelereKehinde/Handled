@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../theme';
 import { PrimaryButton, GlassCard, Toast } from '../components/UI';
 import { authAPI } from '../services/api';
@@ -92,7 +93,7 @@ export default function EmailVerificationScreen({ navigation, route }) {
     try {
       await authAPI.forgotPassword({ email });
       setResendTimer(30);
-      showToast('OTP resent to your email 📬', 'success');
+      showToast('OTP resent to your email.', 'success');
     } catch (err) {
       showToast('Failed to resend OTP');
     }
@@ -102,7 +103,7 @@ export default function EmailVerificationScreen({ navigation, route }) {
     return (
       <View style={[styles.container, styles.successContainer]}>
         <Animated.View style={[styles.successBubble, { transform: [{ scale: successScale }] }]}>
-          <Text style={styles.successEmoji}>✅</Text>
+          <Ionicons name="checkmark-circle" size={64} color={Colors.success} />
         </Animated.View>
         <Text style={styles.successTitle}>Email Verified!</Text>
         <Text style={styles.successSub}>Welcome aboard. Taking you in...</Text>
@@ -122,7 +123,7 @@ export default function EmailVerificationScreen({ navigation, route }) {
 
       <View style={styles.inner}>
         <View style={styles.iconRing}>
-          <Text style={styles.lockEmoji}>📧</Text>
+          <Ionicons name="mail-outline" size={36} color={Colors.glow} />
         </View>
 
         <Text style={styles.title}>Check your{'\n'}email</Text>
@@ -229,7 +230,6 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 12,
   },
-  lockEmoji: { fontSize: 38 },
   title: {
     fontSize: 30,
     fontWeight: '700',
@@ -325,7 +325,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 28,
   },
-  successEmoji: { fontSize: 52 },
   successTitle: {
     fontSize: 28,
     fontWeight: '700',

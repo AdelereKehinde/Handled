@@ -10,6 +10,7 @@ import {
   TextInput,
   Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../theme';
 import { InputField, PrimaryButton, GlassCard, Toast, PasswordStrength } from '../components/UI';
 import { authAPI } from '../services/api';
@@ -44,7 +45,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     setLoading(true);
     try {
       await authAPI.forgotPassword({ email });
-      showToast('OTP sent! Check your inbox 📬', 'success');
+      showToast('OTP sent! Check your inbox.', 'success');
       setTimeout(() => setStep(1), 800);
     } catch (err) {
       showToast(err.message || 'Could not send OTP. Try again.');
@@ -101,7 +102,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Animated.View style={[styles.successBubble, { transform: [{ scale: successScale }] }]}>
-          <Text style={{ fontSize: 52 }}>🎉</Text>
+          <Ionicons name="checkmark-circle" size={64} color={Colors.success} />
         </Animated.View>
         <Text style={styles.successTitle}>Password Reset!</Text>
         <Text style={styles.successSub}>Redirecting you to login...</Text>
@@ -134,14 +135,18 @@ export default function ForgotPasswordScreen({ navigation }) {
         {/* Header */}
         <View style={styles.topArea}>
           <View style={styles.iconRing}>
-            <Text style={styles.iconEmoji}>{step === 0 ? '🔑' : '🛡️'}</Text>
+            <Ionicons
+              name={step === 0 ? 'key-outline' : 'shield-checkmark-outline'}
+              size={36}
+              color={Colors.glow}
+            />
           </View>
           <Text style={styles.title}>
             {step === 0 ? 'Forgot your\npassword?' : 'Reset your\npassword'}
           </Text>
           <Text style={styles.subtitle}>
             {step === 0
-              ? 'No worries — enter your email\nand we'll send you an OTP.'
+              ? "No worries — enter your email\nand we'll send you an OTP."
               : `Enter the code sent to\n${email}`}
           </Text>
         </View>
@@ -191,7 +196,11 @@ export default function ForgotPasswordScreen({ navigation }) {
                 error={errors.newPassword}
                 rightIcon={
                   <TouchableOpacity onPress={() => setShowPass(!showPass)}>
-                    <Text style={{ fontSize: 18 }}>{showPass ? '🙈' : '👁️'}</Text>
+                    <Ionicons
+                      name={showPass ? 'eye-off-outline' : 'eye-outline'}
+                      size={18}
+                      color={Colors.whiteAlpha60}
+                    />
                   </TouchableOpacity>
                 }
               />
@@ -291,7 +300,6 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
-  iconEmoji: { fontSize: 36 },
   title: {
     fontSize: 30,
     fontWeight: '700',

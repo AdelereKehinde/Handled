@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../theme';
 import {
   InputField,
@@ -35,35 +36,53 @@ const ADHD_OPTIONS = [
   'None of the above',
 ];
 
-const SelectPill = ({ options, selected, onSelect }) => (
-  <View style={styles.pillRow}>
-    {options.map((opt) => (
-      <TouchableOpacity
-        key={opt}
-        onPress={() => onSelect(opt)}
-        style={[styles.pill, selected === opt && styles.pillSelected]}
-      >
-        <Text style={[styles.pillText, selected === opt && styles.pillTextSelected]}>
-          {opt}
-        </Text>
-      </TouchableOpacity>
-    ))}
+const GenderSelect = ({ options, value, onSelect, open, onToggle }) => (
+  <View style={styles.selectWrap}>
+    <TouchableOpacity style={styles.selectTrigger} onPress={onToggle} activeOpacity={0.8}>
+      <Text style={[styles.selectText, !value && styles.selectPlaceholder]}>
+        {value || 'Select gender'}
+      </Text>
+      <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.whiteAlpha60} />
+    </TouchableOpacity>
+    {open && (
+      <View style={styles.selectList}>
+        {options.map((opt) => (
+          <TouchableOpacity
+            key={opt}
+            onPress={() => onSelect(opt)}
+            style={styles.selectItem}
+          >
+            <Text style={styles.selectItemText}>{opt}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    )}
   </View>
 );
 
-const MultiSelectPill = ({ options, selected, onToggle }) => (
-  <View style={styles.pillRow}>
-    {options.map((opt) => (
-      <TouchableOpacity
-        key={opt}
-        onPress={() => onToggle(opt)}
-        style={[styles.pill, selected.includes(opt) && styles.pillSelected]}
-      >
-        <Text style={[styles.pillText, selected.includes(opt) && styles.pillTextSelected]}>
-          {opt}
-        </Text>
-      </TouchableOpacity>
-    ))}
+const AllergiesChecklist = ({ options, selected, onToggle, max }) => (
+  <View style={styles.checkList}>
+    {options.map((opt) => {
+      const checked = selected.includes(opt);
+      return (
+        <TouchableOpacity
+          key={opt}
+          onPress={() => onToggle(opt)}
+          style={styles.checkItem}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name={checked ? 'checkbox' : 'square-outline'}
+            size={20}
+            color={checked ? Colors.primary : Colors.whiteAlpha60}
+          />
+          <Text style={styles.checkText}>{opt}</Text>
+          {checked && (
+            <Text style={styles.checkHint}>{`Selected (${selected.length}/${max})`}</Text>
+          )}
+        </TouchableOpacity>
+      );
+    })}
   </View>
 );
 
@@ -84,6 +103,7 @@ export default function SignupScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [errors, setErrors] = useState({});
+  const [genderOpen, setGenderOpen] = useState(false);
 
   const showToast = (message, type = 'error') => {
     setToast({ visible: true, message, type });
@@ -114,6 +134,11 @@ export default function SignupScreen({ navigation }) {
   };
 
   const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      showToast('Please allow photo access to upload a profile picture.');
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -126,9 +151,16 @@ export default function SignupScreen({ navigation }) {
   };
 
   const toggleAllergic = (item) => {
-    setAllergic((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
-    );
+    setAllergic((prev) => {
+      if (prev.includes(item)) {
+        return prev.filter((i) => i !== item);
+      }
+      if (prev.length >= 3) {
+        showToast('You can select up to 3 items.');
+        return prev;
+      }
+      return [...prev, item];
+    });
   };
 
   const handleSubmit = async () => {
@@ -151,7 +183,7 @@ export default function SignupScreen({ navigation }) {
         });
       }
       await authAPI.signup(formData);
-      showToast('Account created! Check your email for the OTP 📬', 'success');
+      showToast('Account created! Check your email for the OTP.', 'success');
       setTimeout(() => {
         navigation.navigate('EmailVerification', { email });
       }, 1200);
@@ -200,7 +232,7 @@ export default function SignupScreen({ navigation }) {
 
         <Text style={styles.stepLabel}>{STEPS[step]}</Text>
         <Text style={styles.stepTitle}>
-          {step === 0 && 'Let's start\nwith the basics'}
+          {step === 0 && "Let's start\nwith the basics"}
           {step === 1 && 'Tell us a\nbit about you'}
           {step === 2 && 'Almost done!\nSet your profile'}
         </Text>
@@ -248,20 +280,26 @@ export default function SignupScreen({ navigation }) {
                 error={errors.occupation}
               />
               <Text style={styles.fieldLabel}>Gender</Text>
-              <SelectPill
+              <GenderSelect
                 options={GENDER_OPTIONS}
-                selected={gender}
-                onSelect={setGender}
+                value={gender}
+                open={genderOpen}
+                onToggle={() => setGenderOpen((v) => !v)}
+                onSelect={(opt) => {
+                  setGender(opt);
+                  setGenderOpen(false);
+                }}
               />
               {errors.gender && <Text style={styles.errorText}>{errors.gender}</Text>}
 
               <Text style={[styles.fieldLabel, { marginTop: 16 }]}>
-                ADHD-related challenges (select all that apply)
+                ADHD-related challenges (choose up to 3)
               </Text>
-              <MultiSelectPill
+              <AllergiesChecklist
                 options={ADHD_OPTIONS}
                 selected={allergic}
                 onToggle={toggleAllergic}
+                max={3}
               />
             </>
           )}
@@ -276,7 +314,7 @@ export default function SignupScreen({ navigation }) {
                   <Image source={{ uri: profilePic.uri }} style={styles.avatar} />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.avatarEmoji}>📷</Text>
+                    <Ionicons name="image-outline" size={28} color={Colors.whiteAlpha30} />
                     <Text style={styles.avatarHint}>Tap to upload</Text>
                   </View>
                 )}
@@ -291,7 +329,11 @@ export default function SignupScreen({ navigation }) {
                 error={errors.password}
                 rightIcon={
                   <TouchableOpacity onPress={() => setShowPass(!showPass)}>
-                    <Text style={styles.eyeIcon}>{showPass ? '🙈' : '👁️'}</Text>
+                    <Ionicons
+                      name={showPass ? 'eye-off-outline' : 'eye-outline'}
+                      size={18}
+                      color={Colors.whiteAlpha60}
+                    />
                   </TouchableOpacity>
                 }
               />
@@ -440,6 +482,47 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 10,
   },
+  selectWrap: {
+    marginBottom: 4,
+  },
+  selectTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.inputBg,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.inputBorder,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 14,
+  },
+  selectText: {
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  selectPlaceholder: {
+    color: Colors.whiteAlpha30,
+  },
+  selectList: {
+    marginTop: 8,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.card,
+    overflow: 'hidden',
+  },
+  selectItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.whiteAlpha10,
+  },
+  selectItemText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '500',
+  },
   pillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -471,6 +554,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
+  checkList: {
+    marginTop: 4,
+    gap: 10,
+  },
+  checkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.whiteAlpha10,
+    borderWidth: 1,
+    borderColor: Colors.whiteAlpha10,
+  },
+  checkText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  checkHint: {
+    color: Colors.whiteAlpha30,
+    fontSize: 11,
+    fontWeight: '600',
+  },
   pickerRow: {
     marginBottom: 16,
     alignItems: 'flex-start',
@@ -494,7 +603,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  avatarEmoji: { fontSize: 26 },
   avatarHint: { color: Colors.whiteAlpha30, fontSize: 10, fontWeight: '500' },
   eyeIcon: { fontSize: 18 },
   actionRow: {

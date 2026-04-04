@@ -9,6 +9,7 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../theme';
 import { InputField, PrimaryButton, GlassCard, Toast } from '../components/UI';
 import { authAPI } from '../services/api';
@@ -49,7 +50,7 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     try {
       await authAPI.login({ email, password });
-      showToast('Welcome back! 🌸', 'success');
+      showToast('Welcome back!', 'success');
       setTimeout(() => navigation.replace('Main'), 1000);
     } catch (err) {
       showToast(err.message || 'Login failed. Check your credentials.');
@@ -79,7 +80,7 @@ export default function LoginScreen({ navigation }) {
         >
           <View style={styles.topArea}>
             <View style={styles.iconBadge}>
-              <Text style={styles.iconEmoji}>🔐</Text>
+              <Ionicons name="lock-closed-outline" size={32} color={Colors.glow} />
             </View>
             <Text style={styles.title}>Welcome{'\n'}back</Text>
             <Text style={styles.subtitle}>Sign in to continue your journey</Text>
@@ -103,9 +104,13 @@ export default function LoginScreen({ navigation }) {
               error={errors.password}
               rightIcon={
                 <TouchableOpacity onPress={() => setShowPass(!showPass)}>
-                  <Text style={styles.eyeIcon}>{showPass ? '🙈' : '👁️'}</Text>
-                </TouchableOpacity>
-              }
+                    <Ionicons
+                      name={showPass ? 'eye-off-outline' : 'eye-outline'}
+                      size={18}
+                      color={Colors.whiteAlpha60}
+                    />
+                  </TouchableOpacity>
+                }
             />
 
             <TouchableOpacity
@@ -197,7 +202,6 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 10,
   },
-  iconEmoji: { fontSize: 34 },
   title: {
     fontSize: 32,
     fontWeight: '700',

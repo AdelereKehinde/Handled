@@ -12,7 +12,15 @@ import {
 import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
 
 // ─── PRIMARY BUTTON ───────────────────────────────────────────────
-export const PrimaryButton = ({ title, onPress, loading, disabled, style, glow = true }) => {
+export const PrimaryButton = ({
+  title,
+  onPress,
+  loading,
+  disabled,
+  style,
+  glow = true,
+  leftIcon,
+}) => {
   const scale = useRef(new Animated.Value(1)).current;
 
   const onPressIn = () =>
@@ -37,7 +45,10 @@ export const PrimaryButton = ({ title, onPress, loading, disabled, style, glow =
         {loading ? (
           <ActivityIndicator color={Colors.white} size="small" />
         ) : (
-          <Text style={styles.primaryBtnText}>{title}</Text>
+          <View style={styles.primaryBtnContent}>
+            {leftIcon && <View style={styles.primaryBtnIcon}>{leftIcon}</View>}
+            <Text style={styles.primaryBtnText}>{title}</Text>
+          </View>
         )}
       </TouchableOpacity>
     </Animated.View>
@@ -233,6 +244,14 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     ...Typography.button,
     letterSpacing: 0.5,
+  },
+  primaryBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  primaryBtnIcon: {
+    marginTop: 1,
   },
   ghostBtn: {
     borderWidth: 1.5,

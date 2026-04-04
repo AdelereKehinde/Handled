@@ -13,7 +13,7 @@ export default function MainScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.blob1} />
       <View style={styles.blob2} />
-      <Text style={styles.welcome}>You're in! 🌸</Text>
+      <Text style={styles.welcome}>You're in!</Text>
       <Text style={styles.sub}>The main app loads here.</Text>
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>

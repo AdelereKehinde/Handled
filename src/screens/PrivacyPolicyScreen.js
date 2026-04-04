@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Animated,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../theme';
 
 const LAST_UPDATED = 'January 1, 2025';
@@ -16,125 +17,62 @@ const SECTIONS = [
   {
     id: 'intro',
     title: '1. Introduction',
-    content: `Welcome to Handled ("we", "us", or "our"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and share information about you when you use our mobile application and related services.
-
-By using Handled, you consent to the collection and use of your information as described in this policy. If you do not agree, please discontinue use of the app immediately.`,
+    content:
+      'Handled explains how we collect and use data when you use our app. By using Handled, you agree to this policy.',
   },
   {
     id: 'collection',
     title: '2. Data We Collect',
-    content: `We collect the following categories of personal data:
-
-• Identity Data: username, age, gender, profile picture
-• Contact Data: email address
-• Usage Data: decision patterns, app interactions, session duration
-• Device Data: device type, OS version, unique device identifiers
-• ADHD Profile Data: self-reported challenges and preferences you provide during onboarding
-
-We collect data directly from you (e.g. during signup), automatically (e.g. usage analytics), and optionally through third-party services.`,
+    content:
+      'We collect basic account info (username, email, age), optional profile details, and usage or device data to run and improve the app.',
   },
   {
     id: 'usage',
     title: '3. How We Use Your Data',
-    content: `We use your data for the following purposes:
-
-• To create and manage your account
-• To deliver personalized decision support
-• To improve app features and performance
-• To send transactional communications (OTPs, notifications)
-• To comply with legal obligations
-• To detect and prevent fraud or misuse
-
-We do NOT sell your personal data to advertisers or third-party marketers.`,
+    content:
+      'We use data to run your account, personalize decisions, improve features, and send important messages. We do not sell your data.',
   },
   {
     id: 'adhd',
     title: '4. ADHD Personalization Data',
-    content: `Handled collects sensitive information related to ADHD challenges to personalize your experience. This includes:
-
-• Decision fatigue levels
-• Task paralysis triggers
-• Hyperfocus patterns
-• Emotional regulation preferences
-
-This data is treated with the highest level of care. It is:
-
-• Stored encrypted at rest
-• Never shared with third parties without explicit consent
-• Used solely to improve your in-app experience
-• Deletable at any time from your account settings`,
+    content:
+      'ADHD-related info is optional and used only for personalization. It is protected and can be removed from your account.',
   },
   {
     id: 'security',
     title: '5. Data Security',
-    content: `We implement industry-standard security measures including:
-
-• AES-256 encryption for stored data
-• TLS 1.3 for data in transit
-• Regular security audits and penetration testing
-• Access control policies limiting employee data access
-• Secure token-based authentication (JWT)
-
-Despite our best efforts, no method of electronic transmission is 100% secure. We encourage users to use strong passwords and to notify us immediately of any suspected breach.`,
+    content:
+      'We use encryption and access controls to protect data. No system is perfect, so use strong passwords and report concerns quickly.',
   },
   {
     id: 'rights',
     title: '6. Your Rights',
-    content: `Depending on your jurisdiction, you may have the following rights:
-
-• Right to Access: Request a copy of your data
-• Right to Rectification: Correct inaccurate data
-• Right to Erasure: Request deletion of your account and data
-• Right to Portability: Export your data in a machine-readable format
-• Right to Object: Opt out of certain processing activities
-• Right to Withdraw Consent: At any time, for consent-based processing
-
-To exercise your rights, contact us at: privacy@handled.app`,
+    content:
+      'You can access, correct, export, or delete your data. Contact privacy@handled.app to make a request.',
   },
   {
     id: 'cookies',
     title: '7. Cookies & Tracking',
-    content: `Our mobile application uses the following tracking technologies:
-
-• Session Tokens: Required for authentication and security
-• Analytics Identifiers: Anonymous usage tracking to improve performance
-• Crash Reporting: Automatic crash logs sent to our infrastructure
-
-We do not use advertising cookies or cross-site tracking. You can disable analytics tracking from your account settings at any time.`,
+    content:
+      'We use session tokens, analytics, and crash reports to keep the app secure and reliable. You can disable analytics in settings.',
   },
   {
     id: 'third',
     title: '8. Third-Party Services',
-    content: `Handled uses the following third-party services, each with their own privacy policies:
-
-• Expo (React Native): App delivery and updates
-• AWS / Cloud Provider: Secure backend infrastructure
-• SendGrid or similar: Transactional email delivery (OTPs)
-• Sentry (optional): Error reporting and monitoring
-
-We do not integrate Facebook Pixel, Google Ads, or any behavioral advertising networks. All third-party integrations are reviewed for compliance before use.`,
+    content:
+      'We use trusted providers for hosting, email, and monitoring. They process data only to provide their services.',
   },
   {
     id: 'changes',
     title: '9. Changes to This Policy',
-    content: `We may update this Privacy Policy from time to time. When we make significant changes, we will:
-
-• Notify you via push notification or email
-• Update the "Last Updated" date at the top of this page
-• Require re-acknowledgment if changes affect your rights materially
-
-Continued use of Handled after changes constitutes acceptance of the updated policy.`,
+    content:
+      'We may update this policy and will change the date above. Continued use means you accept updates.',
   },
   {
     id: 'contact',
     title: '10. Contact Us',
-    content: `If you have any questions about this Privacy Policy, your data, or your rights, contact us:
-
-📧 Email: privacy@handled.app
-📍 Address: Handled Technologies Ltd., Lagos, Nigeria
-🕐 Response Time: Within 72 business hours
-
-We take all privacy inquiries seriously and will respond promptly.`,
+    content:
+      'Questions or requests? Email privacy@handled.app. We respond within 72 business hours.',
   },
 ];
 
@@ -161,7 +99,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Can I use Handled without sharing ADHD data?',
-    a: "Yes. Providing ADHD challenge information during onboarding is optional. The app functions without it, though personalization features will be limited.",
+    a: 'Yes. Providing ADHD challenge information during onboarding is optional. The app functions without it, though personalization features will be limited.',
   },
   {
     q: 'How long do you keep my data?',
@@ -219,16 +157,13 @@ export default function PrivacyPolicyScreen({ navigation }) {
         <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.shieldBadge}>
-            <Text style={styles.shieldEmoji}>🛡️</Text>
+            <Ionicons name="shield-checkmark-outline" size={40} color={Colors.glow} />
           </View>
-          <Text style={styles.heroTitle}>Your Privacy,{'\n'}Our Priority</Text>
+          <Text style={styles.heroTitle}>Your Privacy,{"\n"}Our Priority</Text>
           <Text style={styles.heroSub}>Last updated: {LAST_UPDATED}</Text>
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>✦ We never sell your data</Text>
@@ -248,7 +183,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
         </View>
 
         {/* FAQ */}
-        <Text style={styles.faqTitle}>Frequently Asked{'\n'}Questions</Text>
+        <Text style={styles.faqTitle}>Frequently Asked{"\n"}Questions</Text>
         <Text style={styles.faqSub}>
           Still curious? Here are answers to what people ask most.
         </Text>
@@ -315,7 +250,6 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
-  shieldEmoji: { fontSize: 40 },
   heroTitle: {
     fontSize: 28,
     fontWeight: '700',

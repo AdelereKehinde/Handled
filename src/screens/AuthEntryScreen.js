@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../theme';
 import { PrimaryButton, GhostButton } from '../components/UI';
 
@@ -55,7 +56,8 @@ export default function AuthEntryScreen({ navigation }) {
         {/* Action buttons */}
         <View style={styles.buttons}>
           <PrimaryButton
-            title="Create Account ✦"
+            title="Create Account"
+            leftIcon={<Ionicons name="person-add-outline" size={18} color="#fff" />}
             onPress={() => navigation.navigate('Signup')}
             style={styles.btn}
           />
