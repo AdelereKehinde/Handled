@@ -135,11 +135,11 @@ export default function ForgotPasswordScreen({ navigation }) {
         {/* Header */}
         <View style={styles.topArea}>
           <View style={styles.iconRing}>
-            <Ionicons
-              name={step === 0 ? 'key-outline' : 'shield-checkmark-outline'}
-              size={36}
-              color={Colors.glow}
-            />
+              <Ionicons
+                name={step === 0 ? 'key-outline' : 'shield-checkmark-outline'}
+                size={36}
+                color={Colors.primary}
+              />
           </View>
           <Text style={styles.title}>
             {step === 0 ? 'Forgot your\npassword?' : 'Reset your\npassword'}
@@ -199,7 +199,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                     <Ionicons
                       name={showPass ? 'eye-off-outline' : 'eye-outline'}
                       size={18}
-                      color={Colors.whiteAlpha60}
+                      color={Colors.textLight}
                     />
                   </TouchableOpacity>
                 }
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     width: 320,
     height: 320,
     borderRadius: 160,
-    backgroundColor: 'rgba(108,92,231,0.1)',
+    backgroundColor: 'rgba(159,71,241,0.12)',
     top: -60,
     right: -80,
   },
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     width: 240,
     height: 240,
     borderRadius: 120,
-    backgroundColor: 'rgba(0,207,255,0.07)',
+    backgroundColor: 'rgba(59,130,246,0.08)',
     bottom: 80,
     left: -60,
   },
@@ -288,29 +288,29 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: 'rgba(108,92,231,0.18)',
+    backgroundColor: 'rgba(159,71,241,0.16)',
     borderWidth: 1.5,
-    borderColor: 'rgba(108,92,231,0.35)',
+    borderColor: 'rgba(159,71,241,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 22,
-    shadowColor: '#6C5CE7',
+    shadowColor: '#9f47f1',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.24,
     shadowRadius: 20,
     elevation: 10,
   },
   title: {
     fontSize: 30,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.textDark,
     textAlign: 'center',
     lineHeight: 40,
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 15,
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   fieldLabel: {
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 12,
@@ -335,14 +335,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.inputBg,
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,
-    color: '#fff',
+    color: Colors.textDark,
     fontSize: 22,
     fontWeight: '700',
     textAlign: 'center',
   },
   otpFilled: {
     borderColor: Colors.primary,
-    backgroundColor: 'rgba(108,92,231,0.15)',
+    backgroundColor: 'rgba(159,71,241,0.12)',
   },
   errorText: {
     color: Colors.danger,
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   resendText: {
-    color: Colors.glow,
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(0,214,143,0.15)',
+    backgroundColor: 'rgba(16,185,129,0.12)',
     borderWidth: 2,
     borderColor: Colors.success,
     alignItems: 'center',
@@ -377,11 +377,11 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.textDark,
     marginBottom: 10,
   },
   successSub: {
     fontSize: 15,
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
   },
 });

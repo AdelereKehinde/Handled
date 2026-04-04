@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import NetInfo from '@react-native-community/netinfo';
 import { Colors, Spacing, Radius } from '../theme';
 import {
   InputField,
@@ -20,6 +21,7 @@ import {
   PasswordStrength,
   GlassCard,
   Toast,
+  DaisyMessage,
 } from '../components/UI';
 import { authAPI } from '../services/api';
 
@@ -42,7 +44,7 @@ const GenderSelect = ({ options, value, onSelect, open, onToggle }) => (
       <Text style={[styles.selectText, !value && styles.selectPlaceholder]}>
         {value || 'Select gender'}
       </Text>
-      <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.whiteAlpha60} />
+      <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.textLight} />
     </TouchableOpacity>
     {open && (
       <View style={styles.selectList}>
@@ -74,7 +76,7 @@ const AllergiesChecklist = ({ options, selected, onToggle, max }) => (
           <Ionicons
             name={checked ? 'checkbox' : 'square-outline'}
             size={20}
-            color={checked ? Colors.primary : Colors.whiteAlpha60}
+            color={checked ? Colors.primary : Colors.textSoft}
           />
           <Text style={styles.checkText}>{opt}</Text>
           {checked && (
@@ -90,6 +92,8 @@ export default function SignupScreen({ navigation }) {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'error' });
+  const [slowNotice, setSlowNotice] = useState(false);
+  const slowTimerRef = useRef(null);
 
   // Form fields
   const [username, setUsername] = useState('');
@@ -104,6 +108,12 @@ export default function SignupScreen({ navigation }) {
   const [showPass, setShowPass] = useState(false);
   const [errors, setErrors] = useState({});
   const [genderOpen, setGenderOpen] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
+  }, []);
 
   const showToast = (message, type = 'error') => {
     setToast({ visible: true, message, type });
@@ -166,6 +176,20 @@ export default function SignupScreen({ navigation }) {
   const handleSubmit = async () => {
     if (!validateStep()) return;
     setLoading(true);
+    setSlowNotice(false);
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    slowTimerRef.current = setTimeout(() => {
+      setSlowNotice(true);
+    }, 15000);
+
+    const netState = await NetInfo.fetch();
+    if (netState.isConnected === false || netState.isInternetReachable === false) {
+      setLoading(false);
+      setSlowNotice(false);
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      showToast('No internet connection. Please check your network and try again.');
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append('username', username);
@@ -190,6 +214,8 @@ export default function SignupScreen({ navigation }) {
     } catch (err) {
       showToast(err.message || 'Signup failed. Try again.');
     } finally {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setSlowNotice(false);
       setLoading(false);
     }
   };
@@ -200,6 +226,11 @@ export default function SignupScreen({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <Toast visible={toast.visible} message={toast.message} type={toast.type} />
+      <DaisyMessage
+        visible={slowNotice}
+        title="Daisy says..."
+        message="We’re still syncing your account. Please check your internet."
+      />
 
       {/* Header */}
       <View style={styles.header}>
@@ -212,7 +243,9 @@ export default function SignupScreen({ navigation }) {
           {STEPS.map((s, i) => (
             <View key={i} style={styles.stepItem}>
               <View style={[styles.stepDot, i <= step && styles.stepDotActive]}>
-                <Text style={styles.stepNum}>{i < step ? '✓' : i + 1}</Text>
+                <Text style={[styles.stepNum, i <= step && styles.stepNumActive]}>
+                  {i < step ? '✓' : i + 1}
+                </Text>
               </View>
               {i < STEPS.length - 1 && (
                 <View style={[styles.stepLine, i < step && styles.stepLineActive]} />
@@ -230,7 +263,7 @@ export default function SignupScreen({ navigation }) {
         <View style={styles.blob1} />
         <View style={styles.blob2} />
 
-        <Text style={styles.stepLabel}>{STEPS[step]}</Text>
+      <Text style={styles.stepLabel}>{STEPS[step]}</Text>
         <Text style={styles.stepTitle}>
           {step === 0 && "Let's start\nwith the basics"}
           {step === 1 && 'Tell us a\nbit about you'}
@@ -314,7 +347,7 @@ export default function SignupScreen({ navigation }) {
                   <Image source={{ uri: profilePic.uri }} style={styles.avatar} />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <Ionicons name="image-outline" size={28} color={Colors.whiteAlpha30} />
+                    <Ionicons name="image-outline" size={28} color={Colors.textLight} />
                     <Text style={styles.avatarHint}>Tap to upload</Text>
                   </View>
                 )}
@@ -332,7 +365,7 @@ export default function SignupScreen({ navigation }) {
                     <Ionicons
                       name={showPass ? 'eye-off-outline' : 'eye-outline'}
                       size={18}
-                      color={Colors.whiteAlpha60}
+                      color={Colors.textLight}
                     />
                   </TouchableOpacity>
                 }
@@ -411,9 +444,9 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.whiteAlpha10,
+    backgroundColor: Colors.surface,
     borderWidth: 1.5,
-    borderColor: Colors.whiteAlpha30,
+    borderColor: Colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -422,14 +455,17 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   stepNum: {
-    color: '#fff',
+    color: Colors.textDark,
     fontSize: 12,
     fontWeight: '700',
+  },
+  stepNumActive: {
+    color: Colors.white,
   },
   stepLine: {
     width: 32,
     height: 2,
-    backgroundColor: Colors.whiteAlpha10,
+    backgroundColor: Colors.cardBorder,
   },
   stepLineActive: {
     backgroundColor: Colors.primary,
@@ -444,7 +480,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(108,92,231,0.1)',
+    backgroundColor: 'rgba(159,71,241,0.12)',
     top: -60,
     right: -100,
   },
@@ -453,7 +489,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(0,207,255,0.06)',
+    backgroundColor: 'rgba(59,130,246,0.08)',
     bottom: 0,
     left: -40,
   },
@@ -469,7 +505,7 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.textDark,
     lineHeight: 38,
     marginBottom: 24,
   },
@@ -477,7 +513,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   fieldLabel: {
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 10,
@@ -497,12 +533,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   selectText: {
-    color: Colors.white,
+    color: Colors.textDark,
     fontSize: 15,
     fontWeight: '500',
   },
   selectPlaceholder: {
-    color: Colors.whiteAlpha30,
+    color: Colors.textLight,
   },
   selectList: {
     marginTop: 8,
@@ -519,7 +555,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.whiteAlpha10,
   },
   selectItemText: {
-    color: Colors.white,
+    color: Colors.textDark,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -538,16 +574,16 @@ const styles = StyleSheet.create({
     borderColor: Colors.whiteAlpha10,
   },
   pillSelected: {
-    backgroundColor: 'rgba(108,92,231,0.25)',
+    backgroundColor: 'rgba(159,71,241,0.18)',
     borderColor: Colors.primary,
   },
   pillText: {
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     fontSize: 13,
     fontWeight: '500',
   },
   pillTextSelected: {
-    color: '#fff',
+    color: Colors.textDark,
   },
   errorText: {
     color: Colors.danger,
@@ -570,13 +606,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.whiteAlpha10,
   },
   checkText: {
-    color: Colors.white,
+    color: Colors.textDark,
     fontSize: 14,
     fontWeight: '500',
     flex: 1,
   },
   checkHint: {
-    color: Colors.whiteAlpha30,
+    color: Colors.textLight,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -603,7 +639,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  avatarHint: { color: Colors.whiteAlpha30, fontSize: 10, fontWeight: '500' },
+  avatarHint: { color: Colors.textLight, fontSize: 10, fontWeight: '500' },
   eyeIcon: { fontSize: 18 },
   actionRow: {
     marginBottom: 16,
@@ -616,7 +652,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   loginLinkText: {
-    color: Colors.glow,
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: '500',
   },

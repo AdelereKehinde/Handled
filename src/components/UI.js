@@ -170,6 +170,46 @@ export const Toast = ({ message, type = 'error', visible }) => {
   );
 };
 
+// â”€â”€â”€ DAISY MESSAGE CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const DaisyMessage = ({ visible, title, message }) => {
+  const translateY = useRef(new Animated.Value(40)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(translateY, { toValue: 40, duration: 180, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.daisyWrap,
+        { transform: [{ translateY }], opacity },
+      ]}
+      pointerEvents="none"
+    >
+      <View style={styles.daisyCard}>
+        <View style={styles.daisyDot} />
+        <View style={styles.daisyText}>
+          <Text style={styles.daisyTitle}>{title}</Text>
+          <Text style={styles.daisyMessage}>{message}</Text>
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
+
 // ─── STRENGTH INDICATOR ───────────────────────────────────────────
 export const PasswordStrength = ({ password }) => {
   const getStrength = () => {
@@ -268,7 +308,7 @@ const styles = StyleSheet.create({
   },
   textBtnText: {
     fontSize: 14,
-    color: Colors.glow,
+    color: Colors.primary,
     fontWeight: '500',
   },
   // Input
@@ -289,7 +329,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: Colors.white,
+    color: Colors.textDark,
     fontSize: 16,
     paddingVertical: 14,
     fontWeight: '400',
@@ -327,6 +367,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  // Daisy message
+  daisyWrap: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 44 : 28,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    zIndex: 998,
+  },
+  daisyCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  daisyDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  daisyText: {
+    flex: 1,
+    gap: 2,
+  },
+  daisyTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textDark,
+  },
+  daisyMessage: {
+    fontSize: 13,
+    color: Colors.textSoft,
   },
   // Strength
   strengthWrapper: {

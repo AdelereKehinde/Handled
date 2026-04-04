@@ -123,7 +123,7 @@ export default function EmailVerificationScreen({ navigation, route }) {
 
       <View style={styles.inner}>
         <View style={styles.iconRing}>
-          <Ionicons name="mail-outline" size={36} color={Colors.glow} />
+          <Ionicons name="mail-outline" size={36} color={Colors.primary} />
         </View>
 
         <Text style={styles.title}>Check your{'\n'}email</Text>
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(108,92,231,0.12)',
+    backgroundColor: 'rgba(159,71,241,0.12)',
     top: -80,
     right: -80,
   },
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: 'rgba(0,207,255,0.08)',
+    backgroundColor: 'rgba(59,130,246,0.08)',
     bottom: 60,
     left: -60,
   },
@@ -218,35 +218,35 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: 'rgba(108,92,231,0.2)',
+    backgroundColor: 'rgba(159,71,241,0.16)',
     borderWidth: 1.5,
-    borderColor: 'rgba(108,92,231,0.35)',
+    borderColor: 'rgba(159,71,241,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
-    shadowColor: '#6C5CE7',
+    shadowColor: '#9f47f1',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.24,
     shadowRadius: 20,
     elevation: 12,
   },
   title: {
     fontSize: 30,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.textDark,
     textAlign: 'center',
     marginBottom: 12,
     lineHeight: 40,
   },
   subtitle: {
     fontSize: 15,
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 28,
   },
   emailHighlight: {
-    color: Colors.glow,
+    color: Colors.primary,
     fontWeight: '600',
   },
   card: {
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardLabel: {
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     fontSize: 13,
     fontWeight: '500',
     marginBottom: 16,
@@ -273,17 +273,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.inputBg,
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,
-    color: '#fff',
+    color: Colors.textDark,
     fontSize: 22,
     fontWeight: '700',
     textAlign: 'center',
   },
   otpInputFilled: {
     borderColor: Colors.primary,
-    backgroundColor: 'rgba(108,92,231,0.15)',
-    shadowColor: '#6C5CE7',
+    backgroundColor: 'rgba(159,71,241,0.12)',
+    shadowColor: '#9f47f1',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
   },
   verifyBtn: {
@@ -295,18 +295,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   resendText: {
-    color: Colors.glow,
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: '500',
   },
   resendDisabled: {
-    color: Colors.whiteAlpha30,
+    color: Colors.textLight,
   },
   backLink: {
     paddingVertical: 8,
   },
   backLinkText: {
-    color: Colors.whiteAlpha30,
+    color: Colors.textLight,
     fontSize: 13,
   },
   // Success state
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(0,214,143,0.15)',
+    backgroundColor: 'rgba(16,185,129,0.12)',
     borderWidth: 2,
     borderColor: Colors.success,
     alignItems: 'center',
@@ -328,11 +328,11 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.textDark,
     marginBottom: 10,
   },
   successSub: {
     fontSize: 15,
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
   },
 });

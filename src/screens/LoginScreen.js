@@ -10,8 +10,9 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import NetInfo from '@react-native-community/netinfo';
 import { Colors, Spacing } from '../theme';
-import { InputField, PrimaryButton, GlassCard, Toast } from '../components/UI';
+import { InputField, PrimaryButton, GlassCard, Toast, DaisyMessage } from '../components/UI';
 import { authAPI } from '../services/api';
 
 export default function LoginScreen({ navigation }) {
@@ -21,6 +22,8 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState({ visible: false, message: '', type: 'error' });
+  const [slowNotice, setSlowNotice] = useState(false);
+  const slowTimerRef = useRef(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -30,6 +33,10 @@ export default function LoginScreen({ navigation }) {
       Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.spring(slideAnim, { toValue: 0, tension: 60, friction: 10, useNativeDriver: true }),
     ]).start();
+
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
   }, []);
 
   const showToast = (message, type = 'error') => {
@@ -48,6 +55,20 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     if (!validate()) return;
     setLoading(true);
+    setSlowNotice(false);
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    slowTimerRef.current = setTimeout(() => {
+      setSlowNotice(true);
+    }, 15000);
+
+    const netState = await NetInfo.fetch();
+    if (netState.isConnected === false || netState.isInternetReachable === false) {
+      setLoading(false);
+      setSlowNotice(false);
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      showToast('No internet connection. Please check your network and try again.');
+      return;
+    }
     try {
       await authAPI.login({ email, password });
       showToast('Welcome back!', 'success');
@@ -55,6 +76,8 @@ export default function LoginScreen({ navigation }) {
     } catch (err) {
       showToast(err.message || 'Login failed. Check your credentials.');
     } finally {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setSlowNotice(false);
       setLoading(false);
     }
   };
@@ -65,6 +88,11 @@ export default function LoginScreen({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <Toast visible={toast.visible} message={toast.message} type={toast.type} />
+      <DaisyMessage
+        visible={slowNotice}
+        title="Daisy says..."
+        message="We’re still waiting to connect. Please check your internet."
+      />
 
       {/* Ambient blobs */}
       <View style={styles.blob1} />
@@ -80,7 +108,7 @@ export default function LoginScreen({ navigation }) {
         >
           <View style={styles.topArea}>
             <View style={styles.iconBadge}>
-              <Ionicons name="lock-closed-outline" size={32} color={Colors.glow} />
+              <Ionicons name="lock-closed-outline" size={32} color={Colors.primary} />
             </View>
             <Text style={styles.title}>Welcome{'\n'}back</Text>
             <Text style={styles.subtitle}>Sign in to continue your journey</Text>
@@ -107,7 +135,7 @@ export default function LoginScreen({ navigation }) {
                     <Ionicons
                       name={showPass ? 'eye-off-outline' : 'eye-outline'}
                       size={18}
-                      color={Colors.whiteAlpha60}
+                      color={Colors.textLight}
                     />
                   </TouchableOpacity>
                 }
@@ -160,7 +188,7 @@ const styles = StyleSheet.create({
     width: 350,
     height: 350,
     borderRadius: 175,
-    backgroundColor: 'rgba(108,92,231,0.11)',
+    backgroundColor: 'rgba(159,71,241,0.12)',
     top: -80,
     left: -100,
   },
@@ -169,7 +197,7 @@ const styles = StyleSheet.create({
     width: 250,
     height: 250,
     borderRadius: 125,
-    backgroundColor: 'rgba(0,207,255,0.07)',
+    backgroundColor: 'rgba(59,130,246,0.08)',
     bottom: 100,
     right: -70,
   },
@@ -190,29 +218,29 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(108,92,231,0.2)',
+    backgroundColor: 'rgba(159,71,241,0.14)',
     borderWidth: 1.5,
-    borderColor: 'rgba(108,92,231,0.35)',
+    borderColor: 'rgba(159,71,241,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
-    shadowColor: '#6C5CE7',
+    shadowColor: '#9f47f1',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 18,
     elevation: 10,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.textDark,
     textAlign: 'center',
     lineHeight: 42,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     textAlign: 'center',
   },
   card: {
@@ -224,7 +252,7 @@ const styles = StyleSheet.create({
     marginBottom: -4,
   },
   forgotText: {
-    color: Colors.glow,
+    color: Colors.primary,
     fontSize: 13,
     fontWeight: '500',
   },
@@ -242,10 +270,10 @@ const styles = StyleSheet.create({
   divLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.whiteAlpha10,
+    backgroundColor: Colors.cardBorder,
   },
   divText: {
-    color: Colors.whiteAlpha30,
+    color: Colors.textLight,
     fontSize: 13,
   },
   signupLink: {
@@ -253,11 +281,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   signupLinkText: {
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     fontSize: 14,
   },
   signupHighlight: {
-    color: Colors.glow,
+    color: Colors.primary,
     fontWeight: '600',
   },
 });

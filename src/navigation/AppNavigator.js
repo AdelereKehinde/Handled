@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Colors } from '../theme';
 
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -17,7 +18,7 @@ const Stack = createNativeStackNavigator();
 const screenOptions = {
   headerShown: false,
   animation: 'fade_from_bottom',
-  contentStyle: { backgroundColor: '#0B0F2F' },
+  contentStyle: { backgroundColor: Colors.background },
 };
 
 export default function AppNavigator() {
