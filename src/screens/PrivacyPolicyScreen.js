@@ -161,7 +161,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.shieldBadge}>
-            <Ionicons name="shield-checkmark-outline" size={40} color={Colors.glow} />
+            <Ionicons name="shield-checkmark-outline" size={40} color={Colors.primary} />
           </View>
           <Text style={styles.heroTitle}>Your Privacy,{"\n"}Our Priority</Text>
           <Text style={styles.heroSub}>Last updated: {LAST_UPDATED}</Text>
@@ -375,7 +375,7 @@ const acc = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors.textDark,
     lineHeight: 20,
   },
   arrow: {
@@ -387,11 +387,11 @@ const acc = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderTopWidth: 1,
-    borderTopColor: Colors.whiteAlpha10,
+    borderTopColor: Colors.cardBorder,
   },
   answer: {
     fontSize: 13,
-    color: Colors.whiteAlpha60,
+    color: Colors.textSoft,
     lineHeight: 21,
     paddingTop: 12,
   },

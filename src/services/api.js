@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://handled-app.onrender.com/';
 
 const parseJsonSafe = (text) => {
   if (!text) return null;
