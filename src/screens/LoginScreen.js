@@ -14,8 +14,10 @@ import NetInfo from '@react-native-community/netinfo';
 import { Colors, Spacing } from '../theme';
 import { InputField, PrimaryButton, GlassCard, Toast, DaisyMessage } from '../components/UI';
 import { authAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 
 export default function LoginScreen({ navigation }) {
+  const { reloadUser } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -66,11 +68,12 @@ export default function LoginScreen({ navigation }) {
       setLoading(false);
       setSlowNotice(false);
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-      showToast('No internet connection. Please check your network and try again.');
+      showToast('You're offline. Please check your connection and try again.');
       return;
     }
     try {
       await authAPI.login({ email, password });
+      await reloadUser();
       showToast('Welcome back!', 'success');
       setTimeout(() => navigation.replace('Main'), 1000);
     } catch (err) {
@@ -90,8 +93,8 @@ export default function LoginScreen({ navigation }) {
       <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <DaisyMessage
         visible={slowNotice}
-        title="Daisy says..."
-        message="We’re still waiting to connect. Please check your internet."
+        title="Connection check"
+        message="This is taking longer than expected. Please verify your connection."
       />
 
       {/* Ambient blobs */}
@@ -289,3 +292,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+

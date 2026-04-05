@@ -9,6 +9,7 @@ import {
   Animated,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
 
 // ─── PRIMARY BUTTON ───────────────────────────────────────────────
@@ -42,14 +43,21 @@ export const PrimaryButton = ({
           glow && Shadows.glow,
         ]}
       >
-        {loading ? (
-          <ActivityIndicator color={Colors.white} size="small" />
-        ) : (
-          <View style={styles.primaryBtnContent}>
-            {leftIcon && <View style={styles.primaryBtnIcon}>{leftIcon}</View>}
-            <Text style={styles.primaryBtnText}>{title}</Text>
-          </View>
-        )}
+        <LinearGradient
+          colors={disabled ? ['#c7b8e6', '#c7b8e6'] : ['#9f47f1', '#5b9df9']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.primaryGradient}
+        >
+          {loading ? (
+            <ActivityIndicator color={Colors.white} size="small" />
+          ) : (
+            <View style={styles.primaryBtnContent}>
+              {leftIcon && <View style={styles.primaryBtnIcon}>{leftIcon}</View>}
+              <Text style={styles.primaryBtnText}>{title}</Text>
+            </View>
+          )}
+        </LinearGradient>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -271,15 +279,19 @@ export const DotProgress = ({ total, current }) => (
 const styles = StyleSheet.create({
   // Button
   primaryBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.full,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 18,
+    overflow: 'hidden',
     minHeight: 56,
   },
   primaryBtnDisabled: {
     opacity: 0.5,
+  },
+  primaryGradient: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
   },
   primaryBtnText: {
     ...Typography.button,
@@ -377,10 +389,10 @@ const styles = StyleSheet.create({
     zIndex: 998,
   },
   daisyCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: 'rgba(159,71,241,0.25)',
     padding: Spacing.md,
     flexDirection: 'row',
     gap: 12,

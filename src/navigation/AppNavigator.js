@@ -12,6 +12,8 @@ import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import MainScreen from '../screens/MainScreen';
+import CalmScreen from '../screens/CalmScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -59,6 +61,8 @@ export default function AppNavigator() {
 
         {/* Main App */}
         <Stack.Screen name="Main" component={MainScreen} options={{ animation: 'fade' }} />
+        <Stack.Screen name="Calm" component={CalmScreen} options={{ animation: 'fade' }} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ animation: 'slide_from_right' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

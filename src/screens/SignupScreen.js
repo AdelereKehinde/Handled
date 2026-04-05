@@ -167,7 +167,7 @@ export default function SignupScreen({ navigation }) {
       setLoading(false);
       setSlowNotice(false);
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-      showToast('No internet connection. Please check your network and try again.');
+      showToast('You're offline. Please check your connection and try again.');
       return;
     }
     try {
@@ -204,8 +204,8 @@ export default function SignupScreen({ navigation }) {
       <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <DaisyMessage
         visible={slowNotice}
-        title="Daisy says..."
-        message="We’re still syncing your account. Please check your internet."
+        title="Connection check"
+        message="This is taking longer than expected. Please verify your connection."
       />
 
       {/* Header */}
@@ -596,3 +596,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+

@@ -5,6 +5,8 @@ import NetInfo from '@react-native-community/netinfo';
 import AppNavigator from './src/navigation/AppNavigator';
 import NoInternetScreen from './src/screens/NoInternetScreen';
 import { Colors } from './src/theme';
+import { AppProvider } from './src/context/AppContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function App() {
   const [isOnline, setIsOnline] = useState(true);
@@ -43,12 +45,14 @@ export default function App() {
   }, [isRetrying]);
 
   return (
-    <>
-      <StatusBar style="dark" backgroundColor={Colors.background} />
-      <AppNavigator />
-      {checked && !isOnline ? (
-        <NoInternetScreen onRetry={handleRetry} isRetrying={isRetrying} overlay />
-      ) : null}
-    </>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProvider>
+        <StatusBar style="dark" backgroundColor={Colors.background} />
+        <AppNavigator />
+        {checked && !isOnline ? (
+          <NoInternetScreen onRetry={handleRetry} isRetrying={isRetrying} overlay />
+        ) : null}
+      </AppProvider>
+    </GestureHandlerRootView>
   );
 }
