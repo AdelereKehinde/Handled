@@ -5,12 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   Platform,
   KeyboardAvoidingView,
   Alert,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
 import { Colors, Spacing, Radius } from '../theme';
@@ -102,7 +100,6 @@ export default function SignupScreen({ navigation }) {
   const [occupation, setOccupation] = useState('');
   const [gender, setGender] = useState('');
   const [allergic, setAllergic] = useState([]);
-  const [profilePic, setProfilePic] = useState(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -143,23 +140,6 @@ export default function SignupScreen({ navigation }) {
     setStep((s) => s + 1);
   };
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      showToast('Please allow photo access to upload a profile picture.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      setProfilePic(result.assets[0]);
-    }
-  };
-
   const toggleAllergic = (item) => {
     setAllergic((prev) => {
       if (prev.includes(item)) {
@@ -191,22 +171,18 @@ export default function SignupScreen({ navigation }) {
       return;
     }
     try {
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('email', email);
-      formData.append('age', age);
-      formData.append('occupation', occupation);
-      formData.append('gender', gender);
-      formData.append('allergic', JSON.stringify(allergic));
-      formData.append('password', password);
-      if (profilePic) {
-        formData.append('profile_picture', {
-          uri: profilePic.uri,
-          name: 'profile.jpg',
-          type: 'image/jpeg',
-        });
-      }
-      await authAPI.signup(formData);
+      const payload = {
+        username: username.trim(),
+        email: email.trim(),
+        age,
+        occupation: occupation.trim(),
+        gender,
+        description: '',
+        allergic: JSON.stringify(allergic),
+        password,
+        confirm_password: confirmPassword,
+      };
+      await authAPI.signup(payload);
       showToast('Account created! Check your email for the OTP.', 'success');
       setTimeout(() => {
         navigation.navigate('EmailVerification', { email });
@@ -340,19 +316,6 @@ export default function SignupScreen({ navigation }) {
           {/* Step 3 */}
           {step === 2 && (
             <>
-              {/* Profile picture */}
-              <Text style={styles.fieldLabel}>Profile Picture</Text>
-              <TouchableOpacity style={styles.pickerRow} onPress={pickImage}>
-                {profilePic ? (
-                  <Image source={{ uri: profilePic.uri }} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Ionicons name="image-outline" size={28} color={Colors.textLight} />
-                    <Text style={styles.avatarHint}>Tap to upload</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-
               <InputField
                 label="Password"
                 value={password}
@@ -616,30 +579,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-  pickerRow: {
-    marginBottom: 16,
-    alignItems: 'flex-start',
-  },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-  },
-  avatarPlaceholder: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: Colors.whiteAlpha10,
-    borderWidth: 1.5,
-    borderColor: Colors.inputBorder,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  avatarHint: { color: Colors.textLight, fontSize: 10, fontWeight: '500' },
   eyeIcon: { fontSize: 18 },
   actionRow: {
     marginBottom: 16,

@@ -1,6 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://handled-app.onrender.com/';
+const RAW_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  'https://andled-app-adelerekehinde8808-kdgkcaw5.leapcell.dev';
+const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');
+
+const buildUrl = (endpoint) => {
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint;
+  }
+  if (!endpoint.startsWith('/')) {
+    return `${BASE_URL}/${endpoint}`;
+  }
+  return `${BASE_URL}${endpoint}`;
+};
 
 const parseJsonSafe = (text) => {
   if (!text) return null;
@@ -35,7 +48,7 @@ const request = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await fetch(buildUrl(endpoint), {
     ...options,
     headers,
   });
@@ -53,17 +66,11 @@ const request = async (endpoint, options = {}) => {
 };
 
 export const authAPI = {
-  signup: async (formData) => {
-    const response = await fetch(`${BASE_URL}/auth/signup`, {
+  signup: async (payload) => {
+    return await request('/auth/signup', {
       method: 'POST',
-      body: formData, // multipart/form-data
+      body: JSON.stringify(payload),
     });
-    const text = await response.text();
-    const data = parseJsonSafe(text);
-    if (!response.ok) {
-      throw new Error((data && (data.detail || data.message)) || text || 'Signup failed');
-    }
-    return data ?? text;
   },
 
   login: async ({ email, password }) => {
