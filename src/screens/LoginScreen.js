@@ -68,7 +68,7 @@ export default function LoginScreen({ navigation }) {
       setLoading(false);
       setSlowNotice(false);
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-      showToast('You're offline. Please check your connection and try again.');
+      showToast("You're offline. Please check your connection and try again.");
       return;
     }
     try {
@@ -292,5 +292,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
 
 

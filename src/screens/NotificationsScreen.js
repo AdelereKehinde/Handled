@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Radius } from '../theme';
-import { notificationsAPI } from '../services/api';
-import { usePushNotifications } from '../hooks/usePushNotifications';
+import { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import TopBar from '../components/TopBar';
 import { useApp } from '../context/AppContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
+import { notificationsAPI } from '../services/api';
+import { Colors, Radius } from '../theme';
 
 export default function NotificationsScreen({ navigation }) {
   const [items, setItems] = useState([]);
@@ -14,7 +14,7 @@ export default function NotificationsScreen({ navigation }) {
 
   const load = async () => {
     const res = await notificationsAPI.list();
-    setItems(res?.data || []);
+    setItems(Array.isArray(res) ? res : []);
   };
 
   useEffect(() => {
@@ -23,18 +23,23 @@ export default function NotificationsScreen({ navigation }) {
 
   const markRead = async (id) => {
     await notificationsAPI.markRead(id);
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, is_read: true } : item)));
   };
 
+  const isDark = themeMode === 'dark';
+
   return (
-    <LinearGradient colors={themeMode === 'dark' ? ['#0f172a', '#1e1b4b'] : ['#f7f3ff', '#eef2ff']} style={styles.container}>
-      <TopBar title={strings.notifications || 'Notifications'} onBack={() => navigation.goBack()} />
+    <LinearGradient
+      colors={isDark ? ['#0f172a', '#1e1b4b'] : ['#f7f3ff', '#eef2ff']}
+      style={styles.container}
+    >
+      <TopBar
+        title={strings.notifications || 'Notifications'}
+        onBack={() => navigation.goBack()}
+        tintColor={isDark ? Colors.white : Colors.textDark}
+      />
       <View style={styles.header}>
-        {expoPushToken ? (
-          <Text style={styles.pushHint}>Push enabled</Text>
-        ) : (
-          <Text style={styles.pushHint}>Enable push for updates</Text>
-        )}
+        <Text style={styles.pushHint}>{expoPushToken ? 'Push enabled' : 'Enable push for updates'}</Text>
       </View>
 
       <FlatList

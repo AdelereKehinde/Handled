@@ -16,10 +16,12 @@ export default function DecisionHistoryScreen({ navigation }) {
 
   const load = async () => {
     if (!user?.id) return;
+
     setLoading(true);
+
     try {
       const res = await decisionsAPI.history(user.id);
-      setHistory(res?.data || []);
+      setHistory(Array.isArray(res) ? res : []);
     } finally {
       setLoading(false);
     }
@@ -31,7 +33,7 @@ export default function DecisionHistoryScreen({ navigation }) {
 
   const handleDelete = async (id) => {
     await decisionsAPI.remove(id);
-    setHistory((prev) => prev.filter((d) => d.id !== id));
+    setHistory((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleDeleteAll = async () => {
@@ -53,10 +55,11 @@ export default function DecisionHistoryScreen({ navigation }) {
 
   const filtered = useMemo(() => {
     if (!query.trim()) return history;
+
     const q = query.toLowerCase();
     return history.filter(
-      (d) =>
-        d.input_text?.toLowerCase().includes(q) || d.ai_response?.toLowerCase().includes(q)
+      (item) =>
+        item.input_text?.toLowerCase().includes(q) || item.ai_response?.toLowerCase().includes(q)
     );
   }, [history, query]);
 
@@ -66,6 +69,7 @@ export default function DecisionHistoryScreen({ navigation }) {
         <Text style={styles.deleteText}>Delete</Text>
       </TouchableOpacity>
     );
+
     return (
       <Swipeable renderRightActions={right}>
         <TouchableOpacity
@@ -88,8 +92,15 @@ export default function DecisionHistoryScreen({ navigation }) {
   };
 
   return (
-    <LinearGradient colors={themeMode === 'dark' ? ['#0f172a', '#1e1b4b'] : ['#f7f3ff', '#eef2ff']} style={styles.container}>
-      <TopBar title={strings.decisionHistory || 'Decision history'} onBack={() => navigation.goBack()} />
+    <LinearGradient
+      colors={themeMode === 'dark' ? ['#0f172a', '#1e1b4b'] : ['#f7f3ff', '#eef2ff']}
+      style={styles.container}
+    >
+      <TopBar
+        title={strings.decisionHistory || 'Decision history'}
+        onBack={() => navigation.goBack()}
+      />
+
       <View style={styles.header}>
         <TouchableOpacity onPress={load}>
           <Text style={styles.link}>{loading ? 'Refreshing...' : strings.refresh || 'Refresh'}</Text>
@@ -100,6 +111,7 @@ export default function DecisionHistoryScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
       </View>
+
       <View style={styles.searchWrap}>
         <InputField
           label={strings.searchDecisions || 'Search decisions'}
@@ -108,9 +120,10 @@ export default function DecisionHistoryScreen({ navigation }) {
           placeholder="Search by text or response"
         />
       </View>
+
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         ListEmptyComponent={<Text style={styles.empty}>No decisions yet.</Text>}

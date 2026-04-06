@@ -1,17 +1,18 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useMemo, useState } from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import Orb from '../components/Orb';
-import { Colors } from '../theme';
-import { BlurView } from 'expo-blur';
 import TopBar from '../components/TopBar';
+import { useApp } from '../context/AppContext';
+import { Colors, Radius, Shadows } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,7 +21,7 @@ const randomPos = () => ({
   y: Math.random() * (height - 260) - (height - 260) / 2,
 });
 
-const FloatingOrb = ({ size, onPop }) => {
+const FloatingOrb = ({ size, onPop, hapticsEnabled }) => {
   const float = useSharedValue(0);
   const scale = useSharedValue(1);
   const [pos, setPos] = useState(randomPos());
@@ -39,7 +40,9 @@ const FloatingOrb = ({ size, onPop }) => {
   }));
 
   const handlePress = async () => {
-    await Haptics.selectionAsync();
+    if (hapticsEnabled) {
+      await Haptics.selectionAsync();
+    }
     scale.value = withTiming(0, { duration: 180 }, () => {
       scale.value = withTiming(1, { duration: 240 });
     });
@@ -55,21 +58,50 @@ const FloatingOrb = ({ size, onPop }) => {
 };
 
 export default function CalmScreen({ navigation }) {
+  const { themeMode, hapticsEnabled } = useApp();
   const [score, setScore] = useState(0);
+  const [phaseIndex, setPhaseIndex] = useState(0);
   const orbs = useMemo(() => ['large', 'medium', 'medium', 'small', 'small', 'small', 'small'], []);
+  const promptSteps = ['Breathe in…', 'Hold calm…', 'Breathe out…'];
+  const prompt = promptSteps[phaseIndex];
+  const isDark = themeMode === 'dark';
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPhaseIndex((value) => (value + 1) % promptSteps.length);
+    }, 4200);
+
+    return () => clearInterval(id);
+  }, []);
 
   return (
-    <LinearGradient colors={['#f7f0ff', '#e7dcff']} style={styles.container}>
-      <BlurView intensity={25} style={StyleSheet.absoluteFillObject} />
-      <TopBar title="Calm Space" onBack={() => navigation.goBack()} />
-      <Text style={styles.title}>Breathe in. Tap the orbs to release tension.</Text>
-      <Text style={styles.score}>Calm points: {score}</Text>
+    <LinearGradient
+      colors={isDark ? ['#111827', '#1e293b'] : ['#f7f0ff', '#e7dcff']}
+      style={styles.container}
+    >
+      <BlurView intensity={35} style={StyleSheet.absoluteFillObject} />
+      <TopBar title={''} onBack={() => navigation.goBack()} tintColor={isDark ? Colors.primary : Colors.textDark} />
+      <View style={[styles.heroSection, Shadows.card, isDark && styles.heroSectionDark]}>
+        <Text style={[styles.title, { color: isDark ? Colors.white : Colors.textDark }]}>Calm space</Text>
+        <Text style={[styles.sub, { color: isDark ? Colors.textSoft : Colors.textMid }]}>{prompt}</Text>
+        <Text style={[styles.score, { color: Colors.primary }]}>Calm points: {score}</Text>
+      </View>
+
       <View style={styles.orbLayer}>
         {orbs.map((size, idx) => (
-          <FloatingOrb key={idx} size={size} onPop={() => setScore((s) => s + 1)} />
+          <FloatingOrb
+            key={idx}
+            size={size}
+            hapticsEnabled={hapticsEnabled}
+            onPop={() => setScore((s) => s + 1)}
+          />
         ))}
       </View>
-      <Text style={styles.sub}>Let your breathing set the pace.</Text>
+
+      <View style={styles.breathCard}>
+        <Text style={[styles.breathTitle, { color: isDark ? Colors.white : Colors.textDark }]}>Guided breathing</Text>
+        <Text style={[styles.breathText, { color: isDark ? Colors.textSoft : Colors.textMid }]}>Tap the floating orbs while you follow the rhythm above. Each tap adds calm points and helps you reset.</Text>
+      </View>
     </LinearGradient>
   );
 }
@@ -77,15 +109,27 @@ export default function CalmScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingBottom: 36,
+  },
+  heroSection: {
+    marginHorizontal: 24,
+    marginTop: 16,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: Radius.xl,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  heroSectionDark: {
+    backgroundColor: 'rgba(15,23,42,0.9)',
   },
   title: {
     color: Colors.textDark,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     textAlign: 'center',
     paddingHorizontal: 24,
-    marginTop: 6,
+    marginTop: 0,
   },
   score: {
     color: Colors.primary,
@@ -99,12 +143,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     paddingHorizontal: 24,
+    marginBottom: 14,
   },
   orbLayer: {
     flex: 1,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  breathCard: {
+    position: 'absolute',
+    bottom: 24,
+    left: 24,
+    right: 24,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: Radius.lg,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  breathTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  breathText: {
+    fontSize: 12,
+    lineHeight: 18,
   },
   orbFloat: {
     position: 'absolute',

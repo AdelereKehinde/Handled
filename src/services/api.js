@@ -11,21 +11,15 @@ const buildUrl = (endpoint) => {
   if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
     return endpoint;
   }
+
   if (!endpoint.startsWith('/')) {
     return `${BASE_URL}/${endpoint}`;
   }
+
   return `${BASE_URL}${endpoint}`;
 };
 
-const parseJsonSafe = (text) => {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-};
-
+const extractPayload = (payload) => payload?.data ?? payload;
 const TOKEN_KEY = 'auth_token';
 
 const getToken = async () => {
@@ -46,6 +40,7 @@ const removeToken = async () => {
 
 const decodeToken = (token) => {
   if (!token) return null;
+
   try {
     return jwtDecode(token);
   } catch {
@@ -59,13 +54,17 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
+  config.headers = config.headers || {};
+
   const token = await getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   if (!config.headers['Content-Type']) {
     config.headers['Content-Type'] = 'application/json';
   }
+
   return config;
 });
 
@@ -74,14 +73,16 @@ api.interceptors.response.use(
   (error) => {
     if (error?.code === 'ECONNABORTED' || /timeout/i.test(error?.message || '')) {
       return Promise.reject(
-        new Error('We’re taking longer than expected. Please check your connection and try again.')
+        new Error('We are taking longer than expected. Please check your connection and try again.')
       );
     }
+
     const message =
       error?.response?.data?.detail ||
       error?.response?.data?.message ||
       error?.message ||
       'Something went wrong';
+
     return Promise.reject(new Error(message));
   }
 );
@@ -95,6 +96,7 @@ const request = async (endpoint, options = {}) => {
     params,
     headers,
   });
+
   return response.data;
 };
 
@@ -107,13 +109,17 @@ export const authAPI = {
   },
 
   login: async ({ email, password }) => {
-    const data = await request('/auth/login', {
-      method: 'POST',
-      data: { email, password },
-    });
-    if (data.token || data.access_token) {
+    const data = extractPayload(
+      await request('/auth/login', {
+        method: 'POST',
+        data: { email, password },
+      })
+    );
+
+    if (data?.token || data?.access_token) {
       await setToken(data.token || data.access_token);
     }
+
     return data;
   },
 
@@ -150,16 +156,20 @@ export const authAPI = {
 
 export const decisionsAPI = {
   make: async ({ user_input, user_id, tokens_used = 0 }) => {
-    return await request('/decisions/make', {
-      method: 'POST',
-      params: { user_input, user_id, tokens_used },
-    });
+    return extractPayload(
+      await request('/decisions/make', {
+        method: 'POST',
+        params: { user_input, user_id, tokens_used },
+      })
+    );
   },
+
   history: async (user_id) => {
-    return await request(`/decisions/history/${user_id}`, { method: 'GET' });
+    return extractPayload(await request(`/decisions/history/${user_id}`, { method: 'GET' }));
   },
+
   remove: async (decision_id) => {
-    return await request(`/decisions/${decision_id}`, { method: 'DELETE' });
+    return extractPayload(await request(`/decisions/${decision_id}`, { method: 'DELETE' }));
   },
 };
 
@@ -167,26 +177,31 @@ export const usersAPI = {
   profile: async (user_id) => {
     return await request(`/users/profile/${user_id}`, { method: 'GET' });
   },
+
   updateMe: async (payload) => {
     return await request('/users/me', { method: 'PUT', data: payload });
   },
+
   changePassword: async (payload) => {
     return await request('/users/me/password', { method: 'PUT', data: payload });
   },
+
   deleteMe: async () => {
     return await request('/users/me', { method: 'DELETE' });
   },
+
   userById: async (user_id) => {
-    return await request(`/users/${user_id}`, { method: 'GET' });
+    return extractPayload(await request(`/users/${user_id}`, { method: 'GET' }));
   },
 };
 
 export const notificationsAPI = {
   list: async () => {
-    return await request('/notifications/me', { method: 'GET' });
+    return extractPayload(await request('/notifications/me', { method: 'GET' }));
   },
+
   markRead: async (id) => {
-    return await request(`/notifications/me/${id}/read`, { method: 'POST' });
+    return extractPayload(await request(`/notifications/me/${id}/read`, { method: 'POST' }));
   },
 };
 
@@ -198,7 +213,9 @@ export const bugReportsAPI = {
 
 export const paymentsAPI = {
   createCheckout: async (payload) => {
-    return await request('/payments/create-checkout', { method: 'POST', data: payload });
+    return extractPayload(
+      await request('/payments/create-checkout', { method: 'POST', data: payload })
+    );
   },
 };
 

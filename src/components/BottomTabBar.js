@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useApp } from '../context/AppContext';
 import { Colors, Radius, Shadows } from '../theme';
 
 const ICONS = {
@@ -11,6 +11,8 @@ const ICONS = {
 };
 
 export default function BottomTabBar({ state, descriptors, navigation }) {
+  const { themeMode } = useApp();
+  const isDark = themeMode === 'dark';
   return (
     <View style={styles.wrap}>
       {state.routes.map((route, index) => {
@@ -35,9 +37,17 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
             <Ionicons
               name={`${ICONS[label] || 'ellipse'}${isFocused ? '' : '-outline'}`}
               size={22}
-              color={isFocused ? Colors.primary : Colors.textLight}
+              color={isFocused ? Colors.primary : (isDark ? Colors.primary : Colors.textLight)}
             />
-            <Text style={[styles.label, isFocused && styles.labelActive]}>{label}</Text>
+            <Text
+              style={[
+                styles.label,
+                isFocused && styles.labelActive,
+                !isFocused && isDark && { color: Colors.primary },
+              ]}
+            >
+              {label}
+            </Text>
             {isFocused && <View style={styles.glow} />}
           </TouchableOpacity>
         );

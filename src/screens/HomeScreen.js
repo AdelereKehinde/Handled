@@ -1,24 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Shadows, Spacing } from '../theme';
-import Orb from '../components/Orb';
-import LogoWatermark from '../components/LogoWatermark';
-import { PrimaryButton } from '../components/UI';
-import { decisionsAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import TopBar from '../components/TopBar';
+import { PrimaryButton } from '../components/UI';
+import { useApp } from '../context/AppContext';
+import { decisionsAPI } from '../services/api';
+import { Colors, Radius, Shadows, Spacing } from '../theme';
 
 const QUICK_SUGGESTIONS = [
   'Should I respond now or wait?',
-  'How do I handle this conflict calmly?',
-  'Is this the right time to say no?',
+  'How can I stay calm while I decide?',
+  'What feels most aligned with my values?',
 ];
 
-const DAILY_TOOLS = [
-  { title: '60‑second reset', subtitle: 'Quick calm breathing' },
-  { title: 'Decision clarity', subtitle: '3 questions to ground you' },
+const SUPPORT_CARDS = [
+  { title: 'Guided pause', subtitle: 'Take a quiet moment to breathe.' },
+  { title: 'Mindful focus', subtitle: 'Break your day into gentle steps.' },
 ];
 
 export default function HomeScreen({ navigation }) {
@@ -29,13 +27,15 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     const load = async () => {
       if (!user?.id) return;
+
       try {
         const res = await decisionsAPI.history(user.id);
-        setRecent(res?.data?.slice(0, 3) || []);
+        setRecent(Array.isArray(res) ? res.slice(0, 3) : []);
       } catch {
         setRecent([]);
       }
     };
+
     load();
   }, [user?.id]);
 
@@ -48,44 +48,55 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <LinearGradient colors={gradient} style={styles.container}>
-      <LogoWatermark />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <TopBar
-          title={strings.home || 'Home'}
+          title=""
           onBack={null}
           rightIcon="notifications"
-          onRightPress={() => navigation.getParent()?.getParent()?.navigate('Notifications')}
+          tintColor={themeMode === 'dark' ? Colors.white : Colors.textDark}
+          onRightPress={() => {
+            navigation.getParent()?.navigate('Notifications') || navigation.navigate('Notifications');
+          }}
         />
+
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>{greeting}</Text>
+            <View style={styles.greetingRow}>
+              <Text style={styles.greeting}>{greeting}</Text>
+              <View style={styles.greetingBadge}>
+                <Text style={styles.greetingBadgeText}>Mindful today</Text>
+              </View>
+            </View>
             <Text style={styles.username}>{user?.username || 'Friend'}</Text>
-            {isFree && (
-              <Text style={styles.quota}>Free plan: {remainingDecisions} decisions left today</Text>
-            )}
+            {isFree ? (
+              <Text style={styles.quota}>Decision quota: {remainingDecisions} left today</Text>
+            ) : null}
           </View>
-          <Ionicons name="sparkles" size={22} color={Colors.primary} />
         </View>
 
-        <View style={styles.orbWrap}>
-          <Orb size="large" mode="calm" onPress={() => navigation.navigate('Calm')} />
-          <Text style={styles.orbLabel}>Tap to calm your mind</Text>
-          <TouchableOpacity
-            style={styles.calmPill}
+        <View style={[styles.heroCard, Shadows.card]}>
+          <Text style={styles.heroTitle}>Calm guidance for your day</Text>
+          <Text style={styles.heroSub}>Make thoughtful choices with a clear, gentle process.</Text>
+          <PrimaryButton
+            title={strings.enterCalm || 'Enter Calm Space'}
             onPress={() => navigation.navigate('Calm')}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="moon" size={16} color={Colors.white} />
-            <Text style={styles.calmText}>{strings.enterCalm || 'Enter Calm Space'}</Text>
-          </TouchableOpacity>
+            style={styles.heroButton}
+          />
         </View>
 
         <PrimaryButton
-          title="Handle for me"
+          title="Get calm guidance"
           onPress={() => navigation.navigate('Decisions', { screen: 'DecisionInput' })}
           style={styles.primaryBtn}
           leftIcon={<Ionicons name="flash" size={18} color={Colors.white} />}
         />
+
+        <View style={[styles.infoCard, Shadows.card]}>
+          <Text style={styles.infoTitle}>How handled helps</Text>
+          <Text style={styles.infoText}>
+            Handled supports your thinking with calm suggestions and useful steps. It does not decide for you.
+          </Text>
+        </View>
 
         <Text style={styles.sectionTitle}>{strings.quickSuggestions || 'Quick suggestions'}</Text>
         <View style={styles.quickGrid}>
@@ -94,7 +105,12 @@ export default function HomeScreen({ navigation }) {
               key={item}
               style={[styles.quickCard, Shadows.card]}
               activeOpacity={0.85}
-              onPress={() => navigation.navigate('Decisions', { screen: 'DecisionInput', params: { preset: item } })}
+              onPress={() =>
+                navigation.navigate('Decisions', {
+                  screen: 'DecisionInput',
+                  params: { preset: item },
+                })
+              }
             >
               <Text style={styles.quickText}>{item}</Text>
               <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
@@ -102,37 +118,14 @@ export default function HomeScreen({ navigation }) {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Daily tools</Text>
+        <Text style={styles.sectionTitle}>Calm practices</Text>
         <View style={styles.quickGrid}>
-          {DAILY_TOOLS.map((item) => (
+          {SUPPORT_CARDS.map((item) => (
             <View key={item.title} style={[styles.toolCard, Shadows.card]}>
               <Text style={styles.toolTitle}>{item.title}</Text>
               <Text style={styles.toolSub}>{item.subtitle}</Text>
             </View>
           ))}
-        </View>
-
-        <View style={styles.row}>
-        <Text style={styles.sectionTitle}>{strings.recentDecisions || 'Recent decisions'}</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Decisions', { screen: 'DecisionHistory' })}
-          >
-            <Text style={styles.link}>{strings.viewAll || 'View all'}</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.recentWrap}>
-          {recent.length === 0 ? (
-            <Text style={styles.empty}>No decisions yet. Let’s handle one together.</Text>
-          ) : (
-            recent.map((d) => (
-              <View key={d.id} style={styles.recentCard}>
-                <Text style={styles.recentTitle}>{d.input_text}</Text>
-                <Text style={styles.recentSub} numberOfLines={2}>
-                  {d.ai_response}
-                </Text>
-              </View>
-            ))
-          )}
         </View>
       </ScrollView>
     </LinearGradient>
@@ -152,7 +145,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 18,
   },
+  greetingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   greeting: { color: Colors.textSoft, fontSize: 14, fontWeight: '500' },
+  greetingBadge: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+  },
+  greetingBadgeText: { color: Colors.white, fontSize: 11, fontWeight: '700' },
   username: { color: Colors.textDark, fontSize: 26, fontWeight: '700' },
   quota: { color: Colors.primary, fontSize: 12, marginTop: 4, fontWeight: '600' },
   orbWrap: { alignItems: 'center', marginTop: 10, marginBottom: 24, gap: 10 },
@@ -168,6 +169,40 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   calmText: { color: Colors.white, fontWeight: '600', fontSize: 12 },
+  heroCard: {
+    borderRadius: Radius.xl,
+    padding: 22,
+    marginBottom: 22,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.textDark,
+    marginBottom: 8,
+  },
+  heroSub: {
+    color: Colors.textSoft,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  heroButton: {
+    marginTop: 4,
+    borderRadius: Radius.full,
+  },
+  infoCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 16,
+    marginBottom: 20,
+  },
+  infoTitle: { color: Colors.textDark, fontWeight: '700', marginBottom: 6 },
+  infoText: { color: Colors.textMid, fontSize: 13, lineHeight: 20 },
   primaryBtn: { marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textDark, marginBottom: 12 },
   quickGrid: { gap: 12, marginBottom: 20 },

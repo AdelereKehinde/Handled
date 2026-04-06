@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Radius } from '../theme';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import DecisionCard from '../components/DecisionCard';
-import { GhostButton, PrimaryButton } from '../components/UI';
-import { decisionsAPI } from '../services/api';
-import LogoWatermark from '../components/LogoWatermark';
 import TopBar from '../components/TopBar';
+import { GhostButton, PrimaryButton } from '../components/UI';
 import { useApp } from '../context/AppContext';
+import { decisionsAPI } from '../services/api';
+import { Colors } from '../theme';
 
 export default function DecisionOutputScreen({ navigation, route }) {
   const { decisionId, response, original, error } = route.params || {};
   const [deleting, setDeleting] = useState(false);
-  const { themeMode, strings } = useApp();
+  const { themeMode } = useApp();
   const gradient = themeMode === 'dark' ? ['#0f172a', '#1e1b4b'] : ['#f7f3ff', '#eef2ff'];
 
   const handleDelete = async () => {
@@ -28,7 +27,6 @@ export default function DecisionOutputScreen({ navigation, route }) {
 
   return (
     <LinearGradient colors={gradient} style={styles.container}>
-      <LogoWatermark />
       <View style={styles.content}>
         <TopBar title="Decision result" onBack={() => navigation.goBack()} />
         <Text style={styles.title}>{error ? 'We hit a snag' : 'Your decision'}</Text>

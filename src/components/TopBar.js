@@ -1,24 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../theme';
 
-export default function TopBar({ title, onBack, rightIcon, onRightPress }) {
+export default function TopBar({ title, onBack, rightIcon, onRightPress, tintColor = Colors.textDark }) {
   return (
     <View style={styles.wrap}>
       {onBack ? (
         <TouchableOpacity onPress={onBack} style={styles.iconBtn} activeOpacity={0.8}>
-          <Ionicons name="arrow-back" size={20} color={Colors.textDark} />
+          <Ionicons name="arrow-back" size={20} color={tintColor} />
         </TouchableOpacity>
       ) : (
         <View style={styles.iconSpacer} />
       )}
-      <Text style={styles.title} numberOfLines={1}>
+      <Text style={[styles.title, { color: tintColor }]} numberOfLines={1}>
         {title}
       </Text>
       {rightIcon ? (
         <TouchableOpacity onPress={onRightPress} style={styles.iconBtn} activeOpacity={0.8}>
-          <Ionicons name={rightIcon} size={20} color={Colors.primary} />
+          <Ionicons name={rightIcon} size={20} color={tintColor} />
         </TouchableOpacity>
       ) : (
         <View style={styles.iconSpacer} />

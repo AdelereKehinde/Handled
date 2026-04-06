@@ -1,26 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Modal,
-  TouchableOpacity,
-} from 'react-native';
-import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Radius, Spacing } from '../theme';
-import { InputField, PrimaryButton } from '../components/UI';
-import { decisionsAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
-import LogoWatermark from '../components/LogoWatermark';
+import { useMemo, useState } from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import TopBar from '../components/TopBar';
+import { InputField, PrimaryButton } from '../components/UI';
+import { useApp } from '../context/AppContext';
+import { decisionsAPI } from '../services/api';
+import { Colors, Radius } from '../theme';
 
 export default function DecisionInputScreen({ navigation, route }) {
   const preset = route?.params?.preset;
   const [input, setInput] = useState(preset || '');
-  const [clarity, setClarity] = useState(0.5);
-  const [urgency, setUrgency] = useState(0.5);
   const [loading, setLoading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const { user, remainingDecisions, isFree, incrementDecisionUsage, themeMode, strings } = useApp();
@@ -30,28 +19,31 @@ export default function DecisionInputScreen({ navigation, route }) {
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
+
     if (!user?.id) {
       navigation.replace('AuthEntry');
       return;
     }
+
     if (isFree && remainingDecisions <= 0) {
       setShowUpgrade(true);
       return;
     }
+
     setLoading(true);
+
     try {
-      const contextNote = `\n\nContext: clarity ${Math.round(clarity * 10)}/10, urgency ${Math.round(
-        urgency * 10
-      )}/10.`;
       const res = await decisionsAPI.make({
-        user_input: `${input.trim()}${contextNote}`,
-        user_id: String(user?.id || ''),
+        user_input: input.trim(),
+        user_id: String(user.id),
         tokens_used: 1,
       });
+
       await incrementDecisionUsage();
+
       navigation.navigate('DecisionOutput', {
-        decisionId: res?.data?.decision_id,
-        response: res?.data?.response,
+        decisionId: res?.decision_id,
+        response: res?.response,
         original: input.trim(),
       });
     } catch (err) {
@@ -68,50 +60,24 @@ export default function DecisionInputScreen({ navigation, route }) {
 
   return (
     <LinearGradient colors={gradient} style={styles.container}>
-      <LogoWatermark />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <TopBar title={strings.newDecision || 'New decision'} onBack={() => navigation.goBack()} />
         <Text style={styles.title}>What decision do you need help with?</Text>
-        <Text style={styles.sub}>Describe the situation, and we’ll guide you.</Text>
+        <Text style={styles.sub}>Describe the situation, and we&apos;ll guide you.</Text>
 
         <InputField
           label="Your input"
           value={input}
           onChangeText={setInput}
-          placeholder="Type your decision..."
+          placeholder="Type your question or situation..."
           multiline
         />
 
-        <View style={styles.sliderBlock}>
-          <Text style={styles.sliderLabel}>Clarity needed</Text>
-          <Slider
-            value={clarity}
-            onValueChange={setClarity}
-            minimumValue={0}
-            maximumValue={1}
-            minimumTrackTintColor={Colors.primary}
-            maximumTrackTintColor={Colors.whiteAlpha30}
-            thumbTintColor={Colors.primary}
-          />
-        </View>
-        <View style={styles.sliderBlock}>
-          <Text style={styles.sliderLabel}>Urgency</Text>
-          <Slider
-            value={urgency}
-            onValueChange={setUrgency}
-            minimumValue={0}
-            maximumValue={1}
-            minimumTrackTintColor={Colors.glow}
-            maximumTrackTintColor={Colors.whiteAlpha30}
-            thumbTintColor={Colors.glow}
-          />
-        </View>
-
-        {isFree && remainingDecisions <= 2 && (
+        {isFree && remainingDecisions <= 2 ? (
           <Text style={styles.warn}>
             You are close to your free limit ({remainingDecisions} left today).
           </Text>
-        )}
+        ) : null}
 
         <PrimaryButton
           title={strings.submitDecision || 'Submit decision'}
@@ -126,13 +92,13 @@ export default function DecisionInputScreen({ navigation, route }) {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Upgrade to Pro</Text>
             <Text style={styles.modalText}>
-              You’ve reached your daily free limit. Upgrade to continue making decisions.
+              You&apos;ve reached your daily free limit. Upgrade to continue making decisions.
             </Text>
             <PrimaryButton
               title="See plans"
               onPress={() => {
                 setShowUpgrade(false);
-                navigation.navigate('Profile', { screen: 'Subscription' });
+                navigation.getParent()?.navigate('Profile', { screen: 'Subscription' });
               }}
             />
             <TouchableOpacity onPress={() => setShowUpgrade(false)}>
@@ -155,6 +121,22 @@ const styles = StyleSheet.create({
   sub: { color: Colors.textSoft, marginBottom: 18 },
   sliderBlock: { marginBottom: 18 },
   sliderLabel: { color: Colors.textSoft, marginBottom: 6, fontWeight: '600' },
+  levelRow: { flexDirection: 'row', gap: 8 },
+  levelDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.card,
+  },
+  levelActive: {
+    borderColor: Colors.primary,
+    backgroundColor: 'rgba(159,71,241,0.12)',
+  },
+  levelText: { color: Colors.textDark, fontWeight: '700', fontSize: 12 },
   warn: { color: Colors.danger, marginBottom: 12, fontWeight: '600' },
   modalBackdrop: {
     flex: 1,

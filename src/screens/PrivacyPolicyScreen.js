@@ -10,6 +10,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import TopBar from '../components/TopBar';
+import { useApp } from '../context/AppContext';
 
 const LAST_UPDATED = 'January 1, 2025';
 
@@ -146,8 +149,10 @@ const SectionBlock = ({ section }) => (
 );
 
 export default function PrivacyPolicyScreen({ navigation }) {
+  const { themeMode } = useApp();
+  const gradient = themeMode === 'dark' ? ['#0f172a', '#1e1b4b'] : ['#f7f3ff', '#eef2ff'];
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={gradient} style={styles.container}>
       {/* Fixed header */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -203,7 +208,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
           <Text style={styles.footerCopy}>© 2025 Handled Technologies Ltd.</Text>
         </View>
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 

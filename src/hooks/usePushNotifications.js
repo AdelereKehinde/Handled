@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
+import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
 Notifications.setNotificationHandler({
@@ -36,10 +36,15 @@ export const usePushNotifications = () => {
     responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {});
 
     return () => {
-      if (notificationListener.current) {
+      if (notificationListener.current?.remove) {
+        notificationListener.current.remove();
+      } else if (Notifications.removeNotificationSubscription && notificationListener.current) {
         Notifications.removeNotificationSubscription(notificationListener.current);
       }
-      if (responseListener.current) {
+
+      if (responseListener.current?.remove) {
+        responseListener.current.remove();
+      } else if (Notifications.removeNotificationSubscription && responseListener.current) {
         Notifications.removeNotificationSubscription(responseListener.current);
       }
     };
