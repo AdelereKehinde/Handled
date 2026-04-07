@@ -1,8 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Radius, Shadows } from '../theme';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GlassCard } from '../components/UI';
+import { Colors, Radius, Shadows } from '../theme';
 
 export default function NoInternetScreen({ onRetry, isRetrying = false, overlay = true }) {
   const containerStyle = [styles.container, overlay && styles.overlay];
@@ -25,7 +24,7 @@ export default function NoInternetScreen({ onRetry, isRetrying = false, overlay 
         <GlassCard style={styles.card}>
           <View style={styles.cardRow}>
             <View style={styles.dot} />
-            <Text style={styles.cardText}>We'll open the app as soon as you're back online.</Text>
+            <Text style={styles.cardText}>We&apos;ll open the app as soon as you&apos;re back online.</Text>
           </View>
         </GlassCard>
 

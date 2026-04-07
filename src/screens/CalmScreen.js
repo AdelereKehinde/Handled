@@ -63,7 +63,6 @@ export default function CalmScreen({ navigation }) {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const orbs = useMemo(() => ['large', 'medium', 'medium', 'small', 'small', 'small', 'small'], []);
   const promptSteps = ['Breathe in…', 'Hold calm…', 'Breathe out…'];
-  const prompt = promptSteps[phaseIndex];
   const isDark = themeMode === 'dark';
 
   useEffect(() => {
@@ -80,10 +79,11 @@ export default function CalmScreen({ navigation }) {
       style={styles.container}
     >
       <BlurView intensity={35} style={StyleSheet.absoluteFillObject} />
-      <TopBar title={''} onBack={() => navigation.goBack()} tintColor={isDark ? Colors.primary : Colors.textDark} />
+      <View style={styles.topBarContainer}>
+        <TopBar title={''} onBack={() => navigation.goBack()} tintColor={isDark ? Colors.primary : Colors.textDark} />
+      </View>
       <View style={[styles.heroSection, Shadows.card, isDark && styles.heroSectionDark]}>
         <Text style={[styles.title, { color: isDark ? Colors.white : Colors.textDark }]}>Calm space</Text>
-        <Text style={[styles.sub, { color: isDark ? Colors.textSoft : Colors.textMid }]}>{prompt}</Text>
         <Text style={[styles.score, { color: Colors.primary }]}>Calm points: {score}</Text>
       </View>
 
@@ -100,7 +100,16 @@ export default function CalmScreen({ navigation }) {
 
       <View style={styles.breathCard}>
         <Text style={[styles.breathTitle, { color: isDark ? Colors.white : Colors.textDark }]}>Guided breathing</Text>
-        <Text style={[styles.breathText, { color: isDark ? Colors.textSoft : Colors.textMid }]}>Tap the floating orbs while you follow the rhythm above. Each tap adds calm points and helps you reset.</Text>
+        <View style={styles.promptGrid}>
+          {promptSteps.map((step, index) => (
+            <View key={index} style={[styles.promptItem, index === phaseIndex && styles.promptActive]}>
+              <Text style={[styles.promptText, { color: isDark ? Colors.white : Colors.textDark }]}>{step}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={[styles.breathText, { color: isDark ? Colors.textSoft : Colors.textMid }]}>
+          Tap the floating orbs while following the rhythm above. Each tap adds calm points and helps you reset.
+        </Text>
       </View>
     </LinearGradient>
   );
@@ -109,6 +118,9 @@ export default function CalmScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  topBarContainer: {
+    zIndex: 10,
   },
   heroSection: {
     marginHorizontal: 24,
@@ -146,8 +158,11 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   orbLayer: {
-    flex: 1,
-    width: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -161,6 +176,25 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+  },
+  promptGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+  },
+  promptItem: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+  },
+  promptActive: {
+    backgroundColor: Colors.primary,
+  },
+  promptText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   breathTitle: {
     fontSize: 14,

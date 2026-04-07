@@ -1,20 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Animated,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
-import { Colors, Spacing } from '../theme';
-import { InputField, PrimaryButton, GlassCard, Toast, DaisyMessage } from '../components/UI';
-import { authAPI } from '../services/api';
+import { useEffect, useRef, useState } from 'react';
+import {
+    Animated,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { DaisyMessage, GlassCard, InputField, PrimaryButton, Toast } from '../components/UI';
 import { useApp } from '../context/AppContext';
+import { authAPI } from '../services/api';
+import { Colors } from '../theme';
 
 export default function LoginScreen({ navigation }) {
   const { reloadUser } = useApp();
@@ -171,7 +171,7 @@ export default function LoginScreen({ navigation }) {
             onPress={() => navigation.navigate('Signup')}
           >
             <Text style={styles.signupLinkText}>
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Text style={styles.signupHighlight}>Create one</Text>
             </Text>
           </TouchableOpacity>

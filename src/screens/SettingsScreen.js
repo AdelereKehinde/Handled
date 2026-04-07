@@ -190,18 +190,20 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <Text style={styles.modalHeading}>Choose language</Text>
-            {availableLanguages.map((item) => (
-              <TouchableOpacity
-                key={item.code}
-                style={styles.modalOption}
-                onPress={() => {
-                  setLanguage(item.code);
-                  setLanguageModalVisible(false);
-                }}
-              >
-                <Text style={[styles.modalOptionText, { color: textColor }]}>{item.label}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+              {availableLanguages.map((item) => (
+                <TouchableOpacity
+                  key={item.code}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setLanguage(item.code);
+                    setLanguageModalVisible(false);
+                  }}
+                >
+                  <Text style={[styles.modalOptionText, { color: textColor }]}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             <TouchableOpacity onPress={() => setLanguageModalVisible(false)} style={styles.modalClose}>
               <Text style={styles.modalCloseText}>Cancel</Text>
             </TouchableOpacity>
@@ -213,18 +215,20 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <Text style={styles.modalHeading}>Choose reminder time</Text>
-            {TIME_OPTIONS.map((time) => (
-              <TouchableOpacity
-                key={time}
-                style={styles.modalOption}
-                onPress={() => {
-                  setDailyReminderTime(time);
-                  setTimeModalVisible(false);
-                }}
-              >
-                <Text style={[styles.modalOptionText, { color: textColor }]}>{time}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+              {TIME_OPTIONS.map((time) => (
+                <TouchableOpacity
+                  key={time}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setDailyReminderTime(time);
+                    setTimeModalVisible(false);
+                  }}
+                >
+                  <Text style={[styles.modalOptionText, { color: textColor }]}>{time}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             <TouchableOpacity onPress={() => setTimeModalVisible(false)} style={styles.modalClose}>
               <Text style={styles.modalCloseText}>Cancel</Text>
             </TouchableOpacity>
@@ -271,20 +275,20 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   logout: { marginTop: 12, borderColor: 'transparent', backgroundColor: 'rgba(239,68,68,0.08)' },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+  dangerZone: {
+    marginTop: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.cardBorder,
   },
-  modalCard: {
-    width: '100%',
-    backgroundColor: Colors.card,
-    borderRadius: Radius.lg,
+  dangerZoneTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.danger,
+    marginBottom: 12,
+  },
+  modalContent: {
     padding: 18,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
   },
   modalHeading: {
     fontSize: 18,

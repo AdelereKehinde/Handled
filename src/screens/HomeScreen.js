@@ -94,7 +94,7 @@ export default function HomeScreen({ navigation }) {
         <View style={[styles.infoCard, Shadows.card]}>
           <Text style={styles.infoTitle}>How handled helps</Text>
           <Text style={styles.infoText}>
-            Handled supports your thinking with calm suggestions and useful steps. It does not decide for you.
+            Handled is your decision engine. It guides you through thoughtful choices without deciding for you.
           </Text>
         </View>
 

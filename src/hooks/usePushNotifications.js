@@ -38,14 +38,9 @@ export const usePushNotifications = () => {
     return () => {
       if (notificationListener.current?.remove) {
         notificationListener.current.remove();
-      } else if (Notifications.removeNotificationSubscription && notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
       }
-
       if (responseListener.current?.remove) {
         responseListener.current.remove();
-      } else if (Notifications.removeNotificationSubscription && responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
       }
     };
   }, []);

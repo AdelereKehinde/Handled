@@ -1,19 +1,19 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TextInput,
-  Animated,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing } from '../theme';
-import { InputField, PrimaryButton, GlassCard, Toast, PasswordStrength } from '../components/UI';
+import { useRef, useState } from 'react';
+import {
+    Animated,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { GlassCard, InputField, PasswordStrength, PrimaryButton, Toast } from '../components/UI';
 import { authAPI } from '../services/api';
+import { Colors } from '../theme';
 
 const OTP_LENGTH = 6;
 
@@ -220,7 +220,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         </GlassCard>
 
         <PrimaryButton
-          title={step === 0 ? 'Send OTP →' : 'Reset Password ✦'}
+          title={step === 0 ? 'Send OTP \u2192' : 'Reset Password \u2726'}
           onPress={step === 0 ? handleRequestOtp : handleReset}
           loading={loading}
           style={styles.actionBtn}
