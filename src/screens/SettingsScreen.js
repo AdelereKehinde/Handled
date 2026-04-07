@@ -57,11 +57,6 @@ export default function SettingsScreen({ navigation }) {
 
   const selectedLanguage = availableLanguages.find((item) => item.code === language)?.label || 'English';
 
-  const handleLogout = async () => {
-    await authAPI.logout();
-    navigation.replace('AuthEntry');
-  };
-
   const handleDeleteAccount = async () => {
     Alert.alert(
       'Delete account',
@@ -86,19 +81,6 @@ export default function SettingsScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <TopBar title={strings.settings || 'Settings'} onBack={() => navigation.goBack()} tintColor={textColor} />
         <Text style={[styles.title, { color: textColor }]}>{strings.settings || 'Settings'}</Text>
-
-        <View style={[styles.row, styles.cardRow]}>
-          <View style={styles.rowBody}>
-            <Text style={[styles.rowText, { color: textColor }]}>Dark mode</Text>
-            <Text style={[styles.rowDesc, { color: secondaryColor }]}>Use a darker palette at night.</Text>
-          </View>
-          <Switch
-            value={themeMode === 'dark'}
-            onValueChange={(v) => setThemeMode(v ? 'dark' : 'light')}
-            trackColor={{ true: Colors.primary, false: Colors.cardBorder }}
-            thumbColor={Colors.white}
-          />
-        </View>
 
         <TouchableOpacity style={[styles.row, styles.cardRow]} onPress={() => setLanguageModalVisible(true)}>
           <View style={styles.rowBody}>
@@ -131,7 +113,7 @@ export default function SettingsScreen({ navigation }) {
           </View>
           <Switch
             value={hapticsEnabled}
-            onValueChange={setHapticsEnabled}
+            onValueChange={(value) => setHapticsEnabled(value)}
             trackColor={{ true: Colors.primary, false: Colors.cardBorder }}
             thumbColor={Colors.white}
           />
@@ -177,20 +159,19 @@ export default function SettingsScreen({ navigation }) {
           <Text style={[styles.linkText, { color: textColor }]}>Report a bug</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.row, styles.dangerRow]} onPress={handleDeleteAccount} activeOpacity={0.85}>
-          <Text style={[styles.rowText, { color: Colors.danger }]}>Delete account</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.row, styles.logout]} onPress={handleLogout} activeOpacity={0.85}>
-          <Text style={[styles.rowText, { color: Colors.danger }]}>Logout</Text>
+        <TouchableOpacity style={[styles.row, styles.cardRow, styles.dangerRow]} onPress={handleDeleteAccount} activeOpacity={0.85}>
+          <View style={styles.rowBody}>
+            <Text style={[styles.rowText, { color: Colors.danger }]}>Delete account</Text>
+            <Text style={[styles.rowDesc, { color: Colors.danger }]}>This cannot be undone</Text>
+          </View>
         </TouchableOpacity>
       </ScrollView>
 
       <Modal transparent visible={languageModalVisible} animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalHeading}>Choose language</Text>
-            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            <Text style={[styles.modalHeading, { color: textColor }]}>Choose language</Text>
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
               {availableLanguages.map((item) => (
                 <TouchableOpacity
                   key={item.code}
@@ -214,8 +195,8 @@ export default function SettingsScreen({ navigation }) {
       <Modal transparent visible={timeModalVisible} animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalHeading}>Choose reminder time</Text>
-            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            <Text style={[styles.modalHeading, { color: textColor }]}>Choose reminder time</Text>
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
               {TIME_OPTIONS.map((time) => (
                 <TouchableOpacity
                   key={time}
@@ -270,25 +251,28 @@ const styles = StyleSheet.create({
   },
   linkText: { fontSize: 15, fontWeight: '600' },
   dangerRow: {
-    borderColor: 'transparent',
     backgroundColor: 'rgba(239,68,68,0.08)',
     marginTop: 18,
   },
-  logout: { marginTop: 12, borderColor: 'transparent', backgroundColor: 'rgba(239,68,68,0.08)' },
-  dangerZone: {
-    marginTop: 24,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
-  },
-  dangerZoneTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.danger,
-    marginBottom: 12,
-  },
   modalContent: {
     padding: 18,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxHeight: '70%',
+    backgroundColor: Colors.card,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    paddingTop: 18,
+    paddingHorizontal: 18,
   },
   modalHeading: {
     fontSize: 18,

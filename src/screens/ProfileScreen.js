@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Radius, Shadows } from '../theme';
-import { PrimaryButton } from '../components/UI';
-import { authAPI, usersAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import TopBar from '../components/TopBar';
+import { PrimaryButton } from '../components/UI';
+import { useApp } from '../context/AppContext';
+import { authAPI } from '../services/api';
+import { Colors, Radius, Shadows } from '../theme';
 
 export default function ProfileScreen({ navigation }) {
   const { user, reloadUser, plan, remainingDecisions, isFree, themeMode, strings } = useApp();
@@ -16,19 +16,18 @@ export default function ProfileScreen({ navigation }) {
     reloadUser();
   }, []);
 
-  const handleDelete = () => {
-    Alert.alert('Delete account', 'This will permanently delete your account.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await usersAPI.deleteMe();
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: async () => {
           await authAPI.logout();
           navigation.replace('AuthEntry');
-        },
-      },
-    ]);
+        }},
+      ]
+    );
   };
 
   return (
@@ -58,8 +57,8 @@ export default function ProfileScreen({ navigation }) {
           <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('Settings')}>
             <Text style={styles.rowText}>Settings</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.row} onPress={handleDelete}>
-            <Text style={[styles.rowText, { color: Colors.danger }]}>Delete Account</Text>
+          <TouchableOpacity style={styles.row} onPress={handleLogout}>
+            <Text style={[styles.rowText, { color: Colors.danger }]}>Logout</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

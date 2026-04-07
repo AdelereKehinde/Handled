@@ -1,19 +1,21 @@
-import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Colors } from '../theme';
 
-import SplashScreen from '../screens/SplashScreen';
-import OnboardingScreen from '../screens/OnboardingScreen';
 import AuthEntryScreen from '../screens/AuthEntryScreen';
-import SignupScreen from '../screens/SignupScreen';
-import EmailVerificationScreen from '../screens/EmailVerificationScreen';
-import LoginScreen from '../screens/LoginScreen';
-import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
-import MainScreen from '../screens/MainScreen';
 import CalmScreen from '../screens/CalmScreen';
+import DailyGuidanceScreen from '../screens/DailyGuidanceScreen';
+import EmailVerificationScreen from '../screens/EmailVerificationScreen';
+import FocusSessionScreen from '../screens/FocusSessionScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import LoginScreen from '../screens/LoginScreen';
+import MainScreen from '../screens/MainScreen';
+import MoodDashboardScreen from '../screens/MoodDashboardScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import SignupScreen from '../screens/SignupScreen';
+import SplashScreen from '../screens/SplashScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -63,6 +65,9 @@ export default function AppNavigator() {
         <Stack.Screen name="Main" component={MainScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name="Calm" component={CalmScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="Guidance" component={DailyGuidanceScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="Focus" component={FocusSessionScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="Mood" component={MoodDashboardScreen} options={{ animation: 'slide_from_right' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

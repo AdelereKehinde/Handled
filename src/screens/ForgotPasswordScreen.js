@@ -234,7 +234,7 @@ export default function ForgotPasswordScreen({ navigation }) {
               setOtp(Array(OTP_LENGTH).fill(''));
             }}
           >
-            <Text style={styles.resendText}>Didn't receive it? Try again</Text>
+            <Text style={styles.resendText}>Didn&apos;t receive it? Try again</Text>
           </TouchableOpacity>
         )}
       </ScrollView>

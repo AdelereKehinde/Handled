@@ -12,7 +12,7 @@ import Animated, {
 import Orb from '../components/Orb';
 import TopBar from '../components/TopBar';
 import { useApp } from '../context/AppContext';
-import { Colors, Radius, Shadows } from '../theme';
+import { Colors, Radius } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -79,37 +79,47 @@ export default function CalmScreen({ navigation }) {
       style={styles.container}
     >
       <BlurView intensity={35} style={StyleSheet.absoluteFillObject} />
-      <View style={styles.topBarContainer}>
-        <TopBar title={''} onBack={() => navigation.goBack()} tintColor={isDark ? Colors.primary : Colors.textDark} />
-      </View>
-      <View style={[styles.heroSection, Shadows.card, isDark && styles.heroSectionDark]}>
-        <Text style={[styles.title, { color: isDark ? Colors.white : Colors.textDark }]}>Calm space</Text>
-        <Text style={[styles.score, { color: Colors.primary }]}>Calm points: {score}</Text>
-      </View>
-
-      <View style={styles.orbLayer}>
-        {orbs.map((size, idx) => (
-          <FloatingOrb
-            key={idx}
-            size={size}
-            hapticsEnabled={hapticsEnabled}
-            onPop={() => setScore((s) => s + 1)}
-          />
-        ))}
-      </View>
-
-      <View style={styles.breathCard}>
-        <Text style={[styles.breathTitle, { color: isDark ? Colors.white : Colors.textDark }]}>Guided breathing</Text>
-        <View style={styles.promptGrid}>
-          {promptSteps.map((step, index) => (
-            <View key={index} style={[styles.promptItem, index === phaseIndex && styles.promptActive]}>
-              <Text style={[styles.promptText, { color: isDark ? Colors.white : Colors.textDark }]}>{step}</Text>
-            </View>
+      
+      {/* Full game area */}
+      <View style={styles.gameContainer}>
+        <View style={styles.orbLayer}>
+          {orbs.map((size, idx) => (
+            <FloatingOrb
+              key={idx}
+              size={size}
+              hapticsEnabled={hapticsEnabled}
+              onPop={() => setScore((s) => s + 1)}
+            />
           ))}
         </View>
-        <Text style={[styles.breathText, { color: isDark ? Colors.textSoft : Colors.textMid }]}>
-          Tap the floating orbs while following the rhythm above. Each tap adds calm points and helps you reset.
-        </Text>
+      </View>
+
+      {/* Top overlay - minimal */}
+      <View style={styles.topOverlay}>
+        <View style={styles.topBarWrapper}>
+          <TopBar title={''} onBack={() => navigation.goBack()} tintColor={isDark ? Colors.primary : Colors.textDark} navigation={navigation} />
+        </View>
+        <View style={[styles.scoreCard, isDark && styles.scoreCardDark]}>
+          <Text style={[styles.scoreText, { color: Colors.primary }]}>Calm points: {score}</Text>
+        </View>
+      </View>
+
+      {/* Bottom overlay - breathing guidance */}
+      <View style={styles.bottomOverlay}>
+        <View style={[styles.breathCard, isDark && styles.breathCardDark]}>
+          <View style={styles.promptGrid}>
+            {promptSteps.map((step, index) => (
+              <View key={index} style={[styles.promptItem, index === phaseIndex && styles.promptActive]}>
+                <Text style={[styles.promptText, { color: index === phaseIndex ? Colors.white : (isDark ? Colors.white : Colors.textDark) }]}>
+                  {step}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <Text style={[styles.breathText, { color: isDark ? Colors.textSoft : Colors.textMid }]}>
+            Tap orbs • Follow rhythm • Reset yourself
+          </Text>
+        </View>
       </View>
     </LinearGradient>
   );
@@ -119,63 +129,60 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  topBarContainer: {
-    zIndex: 10,
-  },
-  heroSection: {
-    marginHorizontal: 24,
-    marginTop: 16,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: Radius.xl,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  heroSectionDark: {
-    backgroundColor: 'rgba(15,23,42,0.9)',
-  },
-  title: {
-    color: Colors.textDark,
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-    paddingHorizontal: 24,
-    marginTop: 0,
-  },
-  score: {
-    color: Colors.primary,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 6,
-  },
-  sub: {
-    color: Colors.textSoft,
-    fontSize: 13,
-    textAlign: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 14,
+  gameContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   orbLayer: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
+    zIndex: 20,
+    backgroundColor: 'transparent',
+  },
+  topBarWrapper: {
+    paddingTop: 8,
+  },
+  scoreCard: {
+    marginHorizontal: 24,
+    marginTop: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: Radius.lg,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    alignSelf: 'center',
+  },
+  scoreCardDark: {
+    backgroundColor: 'rgba(15,23,42,0.95)',
+  },
+  scoreText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  bottomOverlay: {
+    position: 'absolute',
     bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    padding: 24,
   },
   breathCard: {
-    position: 'absolute',
-    bottom: 24,
-    left: 24,
-    right: 24,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: Radius.lg,
     padding: 12,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+  },
+  breathCardDark: {
+    backgroundColor: 'rgba(15,23,42,0.95)',
   },
   promptGrid: {
     flexDirection: 'row',
@@ -187,23 +194,19 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: 'rgba(200,200,200,0.2)',
   },
   promptActive: {
     backgroundColor: Colors.primary,
   },
   promptText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-  },
-  breathTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 6,
   },
   breathText: {
     fontSize: 12,
     lineHeight: 18,
+    textAlign: 'center',
   },
   orbFloat: {
     position: 'absolute',

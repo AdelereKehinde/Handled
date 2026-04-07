@@ -1,10 +1,9 @@
-import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import BottomTabBar from '../components/BottomTabBar';
+import CalmScreen from '../screens/CalmScreen';
 import HomeScreen from '../screens/HomeScreen';
 import DecisionStack from './DecisionStack';
 import ProfileStack from './ProfileStack';
-import CalmScreen from '../screens/CalmScreen';
-import BottomTabBar from '../components/BottomTabBar';
 
 const Tab = createBottomTabNavigator();
 

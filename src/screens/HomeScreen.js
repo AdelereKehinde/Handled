@@ -10,8 +10,8 @@ import { Colors, Radius, Shadows, Spacing } from '../theme';
 
 const QUICK_SUGGESTIONS = [
   'Should I respond now or wait?',
-  'How can I stay calm while I decide?',
   'What feels most aligned with my values?',
+  'How can I make this decision with clarity?',
 ];
 
 const SUPPORT_CARDS = [
@@ -57,6 +57,7 @@ export default function HomeScreen({ navigation }) {
           onRightPress={() => {
             navigation.getParent()?.navigate('Notifications') || navigation.navigate('Notifications');
           }}
+          navigation={navigation}
         />
 
         <View style={styles.header}>
@@ -94,11 +95,11 @@ export default function HomeScreen({ navigation }) {
         <View style={[styles.infoCard, Shadows.card]}>
           <Text style={styles.infoTitle}>How handled helps</Text>
           <Text style={styles.infoText}>
-            Handled is your decision engine. It guides you through thoughtful choices without deciding for you.
+            Handled is a decision engine for your mind. It helps you decide clearly and thoughtfully, especially for those with ADHD or anxiety.
           </Text>
         </View>
 
-        <Text style={styles.sectionTitle}>{strings.quickSuggestions || 'Quick suggestions'}</Text>
+        <Text style={styles.sectionTitle}>{strings.quickSuggestions || 'Quick decisions'}</Text>
         <View style={styles.quickGrid}>
           {QUICK_SUGGESTIONS.map((item) => (
             <TouchableOpacity

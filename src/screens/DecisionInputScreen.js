@@ -1,8 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import TopBar from '../components/TopBar';
-import { InputField, PrimaryButton } from '../components/UI';
+import { GhostButton, InputField, PrimaryButton } from '../components/UI';
 import { useApp } from '../context/AppContext';
 import { decisionsAPI } from '../services/api';
 import { Colors, Radius } from '../theme';
@@ -85,25 +86,40 @@ export default function DecisionInputScreen({ navigation, route }) {
           loading={loading}
           disabled={!canSubmit}
         />
+
+        <GhostButton
+          title="View history"
+          onPress={() => navigation.navigate('DecisionHistory')}
+          leftIcon={<Ionicons name="time" size={16} color={Colors.primary} />}
+        />
       </ScrollView>
 
       <Modal transparent visible={showUpgrade} animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Upgrade to Pro</Text>
+            <View style={styles.upgradeHeader}>
+              <Text style={styles.upgradeIcon}>⭐</Text>
+              <Text style={styles.modalTitle}>Unlock Pro</Text>
+            </View>
             <Text style={styles.modalText}>
-              You&apos;ve reached your daily free limit. Upgrade to continue making decisions.
+              You&apos;ve made great progress! Ready to decide unlimited?
             </Text>
+            <View style={styles.featureList}>
+              <Text style={styles.featureItem}>✓ Unlimited decisions daily</Text>
+              <Text style={styles.featureItem}>✓ Priority support</Text>
+              <Text style={styles.featureItem}>✓ Advanced decision insights</Text>
+            </View>
             <PrimaryButton
-              title="See plans"
+              title="View Plans"
               onPress={() => {
                 setShowUpgrade(false);
                 navigation.getParent()?.navigate('Profile', { screen: 'Subscription' });
               }}
             />
-            <TouchableOpacity onPress={() => setShowUpgrade(false)}>
-              <Text style={styles.modalLink}>Maybe later</Text>
-            </TouchableOpacity>
+            <GhostButton
+              title="Maybe later"
+              onPress={() => setShowUpgrade(false)}
+            />
           </View>
         </View>
       </Modal>
@@ -152,7 +168,28 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 12,
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.textDark },
-  modalText: { color: Colors.textSoft, lineHeight: 20 },
+  upgradeHeader: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  upgradeIcon: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.textDark, textAlign: 'center' },
+  modalText: { color: Colors.textSoft, lineHeight: 20, textAlign: 'center' },
+  featureList: {
+    backgroundColor: 'rgba(159,71,241,0.08)',
+    borderRadius: Radius.md,
+    padding: 12,
+    marginVertical: 12,
+    gap: 8,
+  },
+  featureItem: {
+    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
   modalLink: { color: Colors.primary, fontWeight: '600', textAlign: 'center', marginTop: 4 },
 });
