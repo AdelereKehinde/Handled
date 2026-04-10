@@ -85,10 +85,6 @@ const FAQ_ITEMS = [
     a: 'No. Your ADHD personalization data is encrypted and used only to improve your in-app experience. We never share it with advertisers, employers, or third-party apps without your explicit consent.',
   },
   {
-    q: 'Can I delete my account and all my data?',
-    a: 'Yes. You can request full account deletion from Settings → Account → Delete Account. This permanently removes all your data from our systems within 30 days.',
-  },
-  {
     q: 'How is my password stored?',
     a: 'Passwords are hashed using bcrypt with a high cost factor and are never stored in plain text. Even our team cannot see your password.',
   },

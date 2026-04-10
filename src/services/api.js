@@ -391,15 +391,27 @@ export const paymentsAPI = {
       await request('/payments/create-checkout', { method: 'POST', data: payload })
     );
   },
+
+  verifyPayment: async (user_id) => {
+    return extractPayload(
+      await request(`/payments/verify/${user_id}`, { method: 'GET' })
+    );
+  },
+
+  getPaymentStatus: async (user_id) => {
+    return extractPayload(
+      await request(`/payments/status/${user_id}`, { method: 'GET' })
+    );
+  },
 };
 
 export {
-  buildUrl,
-  decodeToken,
-  getRefreshToken,
-  getToken,
-  isNetworkError,
-  removeToken, setAuthTokens, setRefreshToken,
-  setToken
+    buildUrl,
+    decodeToken,
+    getRefreshToken,
+    getToken,
+    isNetworkError,
+    removeToken, setAuthTokens, setRefreshToken,
+    setToken
 };
 

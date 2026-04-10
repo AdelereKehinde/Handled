@@ -78,7 +78,6 @@ export default function DecisionOutputScreen({ navigation, route }) {
 
         <View style={styles.actionSection}>
           <PrimaryButton title={speaking ? 'Stop reading' : 'Read aloud'} onPress={handleSpeak} />
-          <PrimaryButton title={strings.next || 'Next decision'} onPress={() => navigation.navigate('DecisionInput', { preset: original })} />
           <GhostButton title={strings.deletDecision || 'Delete decision'} onPress={handleDelete} style={styles.deleteBtn} loading={deleting} />
           <GhostButton title={strings.back || 'Back'} onPress={() => navigation.navigate('DecisionHistory')} />
         </View>

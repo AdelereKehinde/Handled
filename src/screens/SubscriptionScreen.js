@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import TopBar from '../components/TopBar';
 import { useApp } from '../context/AppContext';
 import { paymentsAPI } from '../services/api';
@@ -34,12 +34,26 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export default function SubscriptionScreen({ navigation }) {
   const { user, reloadUser, plan } = useApp();
   const [loadingPlanId, setLoadingPlanId] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successPlanId, setSuccessPlanId] = useState(null);
 
-  const refreshPlanStatus = async () => {
-    for (let attempt = 0; attempt < 6; attempt += 1) {
+  const refreshPlanStatus = async (targetPlan, maxAttempts = 15) => {
+    let planUpdated = false;
+    let previousPlan = plan;
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await wait(2000); // Wait 2 seconds between attempts (30 seconds total for 15 attempts)
       await reloadUser();
-      await wait(1800);
+      
+      // Check if the plan has been updated by comparing with the current plan
+      // This will be updated through the context after reloadUser
+      if (plan !== previousPlan || plan === targetPlan) {
+        planUpdated = true;
+        break;
+      }
     }
+    
+    return planUpdated;
   };
 
   const startCheckout = async (selectedPlan) => {
@@ -59,16 +73,36 @@ export default function SubscriptionScreen({ navigation }) {
 
       if (!res?.checkout_url) {
         Alert.alert('Error', 'Failed to create checkout session. Please try again.');
+        setLoadingPlanId(null);
         return;
       }
 
       await WebBrowser.openBrowserAsync(res.checkout_url);
-      await refreshPlanStatus();
-    } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to start checkout. Please try again.');
-    } finally {
+      
+      // Poll for payment status update
+      const planUpdated = await refreshPlanStatus(selectedPlan);
+      
       setLoadingPlanId(null);
+      
+      // Show success modal if plan was updated
+      if (planUpdated) {
+        setSuccessPlanId(selectedPlan);
+        setShowSuccessModal(true);
+      } else {
+        Alert.alert(
+          'Payment Processing',
+          'Your payment is being processed. Your plan will be updated shortly. Please check back in a moment.',
+          [{ text: 'OK', onPress: () => {} }]
+        );
+      }
+    } catch (error) {
+      setLoadingPlanId(null);
+      Alert.alert('Error', error.message || 'Failed to start checkout. Please try again.');
     }
+  };
+
+  const getPlanDetails = (planId) => {
+    return PLANS.find(p => p.id === planId);
   };
 
   return (
@@ -143,6 +177,51 @@ export default function SubscriptionScreen({ navigation }) {
           );
         })}
       </ScrollView>
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.successModal, Shadows.card]}>
+            <View style={styles.successIcon}>
+              <Ionicons name="checkmark-circle" size={60} color="#10b981" />
+            </View>
+            
+            <Text style={styles.successTitle}>Payment Successful! 🎉</Text>
+            <Text style={styles.successSub}>
+              Welcome to <Text style={{ fontWeight: '700' }}>{getPlanDetails(successPlanId)?.title} Plan</Text>
+            </Text>
+
+            <View style={styles.featuresModal}>
+              {getPlanDetails(successPlanId)?.features.map((feature) => (
+                <View key={feature} style={styles.featureRowModal}>
+                  <Ionicons name="checkmark" size={18} color="#10b981" />
+                  <Text style={styles.featureTextModal}>{feature}</Text>
+                </View>
+              ))}
+            </View>
+
+            <Text style={styles.successMessage}>
+              Your new features are now active! Enjoy unlimited access to all premium features.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.successBtn}
+              onPress={() => {
+                setShowSuccessModal(false);
+                navigation.navigate('ProfileHome');
+              }}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.successBtnText}>Get Started</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -263,6 +342,77 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
   ctaText: {
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  // Success Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  successModal: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.xl,
+    padding: 28,
+    alignItems: 'center',
+    maxWidth: 320,
+    width: '100%',
+  },
+  successIcon: {
+    marginBottom: 16,
+  },
+  successTitle: {
+    color: Colors.textDark,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  successSub: {
+    color: Colors.textMid,
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  featuresModal: {
+    width: '100%',
+    backgroundColor: '#f0fdf4',
+    borderRadius: Radius.lg,
+    padding: 16,
+    marginBottom: 20,
+    gap: 10,
+  },
+  featureRowModal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  featureTextModal: {
+    color: Colors.textDark,
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  successMessage: {
+    color: Colors.textSoft,
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  successBtn: {
+    width: '100%',
+    backgroundColor: '#10b981',
+    borderRadius: Radius.lg,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successBtnText: {
     color: Colors.white,
     fontSize: 15,
     fontWeight: '800',

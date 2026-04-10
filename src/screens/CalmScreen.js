@@ -1,13 +1,14 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withTiming,
 } from 'react-native-reanimated';
 import Orb from '../components/Orb';
 import TopBar from '../components/TopBar';
@@ -72,6 +73,13 @@ export default function CalmScreen({ navigation }) {
 
     return () => clearInterval(id);
   }, []);
+
+  // Save calm points when score changes
+  useEffect(() => {
+    if (score > 0) {
+      AsyncStorage.setItem('calm_points', score.toString());
+    }
+  }, [score]);
 
   return (
     <LinearGradient
