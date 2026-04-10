@@ -86,6 +86,7 @@ export default function FocusSessionScreen({ navigation }) {
         title={strings.focusMode || 'Focus Mode'}
         onBack={() => navigation.goBack()}
         tintColor={textColor}
+        icon="play-circle"
       />
 
       <View style={styles.content}>
@@ -166,7 +167,7 @@ export default function FocusSessionScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center', paddingBottom: 120 },
+  content: { flex: 1, padding: 24, justifyContent: 'flex-start', alignItems: 'center', paddingBottom: 120, paddingTop: 40 },
   timerCircle: {
     width: 320,
     height: 320,
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
   motivationText: {
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 16,
   },
   buttonRow: {
     flexDirection: 'row',

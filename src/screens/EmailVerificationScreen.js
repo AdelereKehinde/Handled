@@ -13,10 +13,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../theme';
 import { PrimaryButton, GlassCard, Toast } from '../components/UI';
 import { authAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 
 const OTP_LENGTH = 6;
 
 export default function EmailVerificationScreen({ navigation, route }) {
+  const { reloadUser } = useApp();
   const email = route?.params?.email || '';
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
@@ -69,6 +71,7 @@ export default function EmailVerificationScreen({ navigation, route }) {
     setLoading(true);
     try {
       await authAPI.verifyEmail({ email, otp: finalCode });
+      await reloadUser();
       setVerified(true);
       Animated.spring(successScale, {
         toValue: 1,
@@ -91,7 +94,7 @@ export default function EmailVerificationScreen({ navigation, route }) {
   const handleResend = async () => {
     if (resendTimer > 0) return;
     try {
-      await authAPI.forgotPassword({ email });
+      await authAPI.resendVerifyEmail({ email });
       setResendTimer(30);
       showToast('OTP resent to your email.', 'success');
     } catch (err) {

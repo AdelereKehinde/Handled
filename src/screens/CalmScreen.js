@@ -97,7 +97,7 @@ export default function CalmScreen({ navigation }) {
       {/* Top overlay - minimal */}
       <View style={styles.topOverlay}>
         <View style={styles.topBarWrapper}>
-          <TopBar title={''} onBack={() => navigation.goBack()} tintColor={isDark ? Colors.primary : Colors.textDark} navigation={navigation} />
+          <TopBar title={''} onBack={() => navigation.goBack()} tintColor={isDark ? Colors.primary : Colors.textDark} navigation={navigation} showNotifications={true} onNotificationsPress={() => navigation.navigate('Notifications')} />
         </View>
         <View style={[styles.scoreCard, isDark && styles.scoreCardDark]}>
           <Text style={[styles.scoreText, { color: Colors.primary }]}>Calm points: {score}</Text>

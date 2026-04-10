@@ -11,6 +11,7 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import LoginScreen from '../screens/LoginScreen';
 import MainScreen from '../screens/MainScreen';
 import MoodDashboardScreen from '../screens/MoodDashboardScreen';
+import MicroTaskBreakdownScreen from '../screens/MicroTaskBreakdownScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
@@ -68,6 +69,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Guidance" component={DailyGuidanceScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Focus" component={FocusSessionScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Mood" component={MoodDashboardScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="MicroTasks" component={MicroTaskBreakdownScreen} options={{ animation: 'slide_from_right' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

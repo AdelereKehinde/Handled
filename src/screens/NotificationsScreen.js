@@ -3,17 +3,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import TopBar from '../components/TopBar';
 import { useApp } from '../context/AppContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { notificationsAPI } from '../services/api';
 import { Colors, Radius, Shadows } from '../theme';
 
+const NOTIFICATION_SETTINGS_KEY = 'notificationSettings';
+const LOCAL_INBOX_KEY = 'localNotificationInbox';
+
 const NOTIFICATION_TYPES = [
   {
     id: 'reminders',
-    icon: 'alarm',
+    icon: 'time',
     label: 'Decision Reminders',
     description: 'Gentle nudges to practice decisions',
     color: '#a78bfa',
@@ -33,11 +36,11 @@ const NOTIFICATION_TYPES = [
     color: '#fbbf24',
   },
   {
-    id: 'mood',
-    icon: 'happy',
-    label: 'Mood Check-in',
-    description: 'Quick mood tracking reminder',
-    color: '#f87171',
+    id: 'guidance',
+    icon: 'book',
+    label: 'Daily Guidance',
+    description: 'Daily motivational tips and reminders',
+    color: '#8b5cf6',
   },
 ];
 
@@ -48,18 +51,48 @@ export default function NotificationsScreen({ navigation }) {
     reminders: true,
     calm: true,
     focus: false,
-    mood: false,
+    guidance: false,
   });
-  const { expoPushToken } = usePushNotifications();
+  const [scheduledTimes, setScheduledTimes] = useState({
+    reminders: { hour: 14, minute: 0 },
+    calm: { hour: 12, minute: 0 },
+    focus: { hour: 9, minute: 0 },
+    guidance: { hour: 8, minute: 0 },
+  });
+  const { expoPushToken, scheduleRecurringNotification, cancelRecurringNotification } = usePushNotifications();
   const { themeMode, strings, hapticsEnabled } = useApp();
 
   const load = async () => {
-    const res = await notificationsAPI.list();
-    setItems(Array.isArray(res) ? res : []);
-    
-    const saved = await AsyncStorage.getItem('notificationSettings');
+    const [res, saved, localInbox] = await Promise.all([
+      notificationsAPI.list().catch(() => []),
+      AsyncStorage.getItem(NOTIFICATION_SETTINGS_KEY),
+      AsyncStorage.getItem(LOCAL_INBOX_KEY),
+    ]);
+
+    const remoteItems = Array.isArray(res) ? res : [];
+    const storedLocalItems = localInbox ? JSON.parse(localInbox) : [];
+    const mergedItems = [...storedLocalItems, ...remoteItems].sort((a, b) => {
+      const aTime = new Date(a.created_at || 0).getTime();
+      const bTime = new Date(b.created_at || 0).getTime();
+      return bTime - aTime;
+    });
+
+    setItems(mergedItems);
+
     if (saved) {
-      setEnabledTypes(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      setEnabledTypes({
+        reminders: parsed.reminders ?? true,
+        calm: parsed.calm ?? true,
+        focus: parsed.focus ?? false,
+        guidance: parsed.guidance ?? false,
+      });
+      setScheduledTimes({
+        reminders: parsed.remindersTime || { hour: 14, minute: 0 },
+        calm: parsed.calmTime || { hour: 12, minute: 0 },
+        focus: parsed.focusTime || { hour: 9, minute: 0 },
+        guidance: parsed.guidanceTime || { hour: 8, minute: 0 },
+      });
     }
   };
 
@@ -74,8 +107,45 @@ export default function NotificationsScreen({ navigation }) {
   }, []);
 
   const markRead = async (id) => {
-    await notificationsAPI.markRead(id);
+    const target = items.find((item) => item.id === id);
+
+    if (target?.source === 'local') {
+      const saved = await AsyncStorage.getItem(LOCAL_INBOX_KEY);
+      const parsed = saved ? JSON.parse(saved) : [];
+      const updated = parsed.map((item) => (item.id === id ? { ...item, is_read: true } : item));
+      await AsyncStorage.setItem(LOCAL_INBOX_KEY, JSON.stringify(updated));
+    } else {
+      await notificationsAPI.markRead(id);
+    }
+
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, is_read: true } : item)));
+  };
+
+  const persistNotificationSettings = async (nextEnabledTypes, nextScheduledTimes) => {
+    await AsyncStorage.setItem(
+      NOTIFICATION_SETTINGS_KEY,
+      JSON.stringify({
+        ...nextEnabledTypes,
+        remindersTime: nextScheduledTimes.reminders,
+        calmTime: nextScheduledTimes.calm,
+        focusTime: nextScheduledTimes.focus,
+        guidanceTime: nextScheduledTimes.guidance,
+      })
+    );
+  };
+
+  const updateScheduledTime = async (typeId, hour, minute) => {
+    const newTimes = {
+      ...scheduledTimes,
+      [typeId]: { hour, minute },
+    };
+    setScheduledTimes(newTimes);
+
+    // If this type is enabled, reschedule with new time
+    if (enabledTypes[typeId]) {
+      await scheduleRecurringNotification(typeId, hour, minute);
+    }
+    await persistNotificationSettings(enabledTypes, newTimes);
   };
 
   const toggleNotificationType = async (typeId) => {
@@ -84,42 +154,22 @@ export default function NotificationsScreen({ navigation }) {
       [typeId]: !enabledTypes[typeId],
     };
     setEnabledTypes(newState);
-    await AsyncStorage.setItem('notificationSettings', JSON.stringify(newState));
-  };
 
-  const sendTestNotification = async (typeId) => {
-    const type = NOTIFICATION_TYPES.find((t) => t.id === typeId);
-    const messages = {
-      reminders: {
-        title: '✨ Time to Practice',
-        body: 'A decision awaits. When ready, your mind will know.',
-      },
-      calm: {
-        title: '🍃 Breathe',
-        body: 'Take a moment. In through your nose, out through your mouth.',
-      },
-      focus: {
-        title: '🎯 Focus Moment',
-        body: 'Your 25-minute session awaits. Let\'s do this.',
-      },
-      mood: {
-        title: '💜 How are you?',
-        body: 'A quick check-in. No judgment, just honest feeling.',
-      },
-    };
+    try {
+      // Schedule or cancel recurring notification
+      if (newState[typeId]) {
+        const time = scheduledTimes[typeId];
+        await scheduleRecurringNotification(typeId, time.hour, time.minute);
+      } else {
+        await cancelRecurringNotification(typeId);
+      }
+    } catch (error) {
+      console.log('Error scheduling/canceling notification:', error);
+      // Still save the toggle state even if scheduling fails
+    }
 
-    const msg = messages[typeId];
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: msg.title,
-        body: msg.body,
-        sound: 'default',
-        data: { type: typeId },
-      },
-      trigger: { seconds: 2 },
-    });
-
-    Alert.alert('Test Notification Queued', 'Check in a moment! 📬');
+    // Save settings
+    await persistNotificationSettings(newState, scheduledTimes);
   };
 
   const isDark = themeMode === 'dark';
@@ -137,6 +187,7 @@ export default function NotificationsScreen({ navigation }) {
           title={strings.notifications || 'Notifications'}
           onBack={() => navigation.goBack()}
           tintColor={textColor}
+          icon="notifications"
         />
 
         <View style={styles.tabsContainer}>
@@ -182,14 +233,34 @@ export default function NotificationsScreen({ navigation }) {
                   </View>
 
                   <View style={styles.notificationActions}>
-                    <TouchableOpacity
-                      onPress={() => sendTestNotification(notifType.id)}
-                      style={[styles.testButton, isDark && styles.testButtonDark]}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="send" size={12} color={secondaryColor} />
-                      <Text style={[styles.testButtonText, { color: secondaryColor }]}>Test</Text>
-                    </TouchableOpacity>
+                    <View style={styles.timeContainer}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const time = scheduledTimes[notifType.id];
+                          const newHour = time.hour > 0 ? time.hour - 1 : 23;
+                          updateScheduledTime(notifType.id, newHour, time.minute);
+                        }}
+                        style={[styles.timeButton, isDark && styles.timeButtonDark]}
+                      >
+                        <Ionicons name="remove" size={12} color={secondaryColor} />
+                      </TouchableOpacity>
+                      
+                      <Text style={[styles.timeText, { color: textColor }]}>
+                        {scheduledTimes[notifType.id].hour.toString().padStart(2, '0')}:
+                        {scheduledTimes[notifType.id].minute.toString().padStart(2, '0')}
+                      </Text>
+                      
+                      <TouchableOpacity
+                        onPress={() => {
+                          const time = scheduledTimes[notifType.id];
+                          const newHour = time.hour < 23 ? time.hour + 1 : 0;
+                          updateScheduledTime(notifType.id, newHour, time.minute);
+                        }}
+                        style={[styles.timeButton, isDark && styles.timeButtonDark]}
+                      >
+                        <Ionicons name="add" size={12} color={secondaryColor} />
+                      </TouchableOpacity>
+                    </View>
 
                     <TouchableOpacity
                       onPress={() => toggleNotificationType(notifType.id)}
@@ -309,20 +380,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  testButton: {
+  timeContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: Radius.md,
+  },
+  timeButton: {
+    width: 24,
+    height: 24,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  testButtonDark: {
+  timeButtonDark: {
     borderColor: 'rgba(255,255,255,0.1)',
   },
-  testButtonText: { fontSize: 11, fontWeight: '500' },
+  timeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    minWidth: 40,
+    textAlign: 'center',
+  },
   toggleButton: {
     width: 28,
     height: 28,

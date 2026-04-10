@@ -1,195 +1,552 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useMemo, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Speech from 'expo-speech';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Animated, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import TopBar from '../components/TopBar';
-import { GhostButton, InputField, PrimaryButton } from '../components/UI';
+import { GhostButton, PrimaryButton } from '../components/UI';
 import { useApp } from '../context/AppContext';
 import { decisionsAPI } from '../services/api';
-import { Colors, Radius } from '../theme';
+import { Colors, Radius, Shadows } from '../theme';
+import { addLocalDecision } from '../utils/localDecisions';
+import { buildOfflineDecisionReply } from '../utils/offlineDecisionEngine';
+
+const CHAT_STORAGE_PREFIX = 'decisionChatSession';
+
+const VoiceWave = ({ active }) => {
+  const bars = useRef([0, 1, 2, 3, 4].map(() => new Animated.Value(0.35))).current;
+
+  useEffect(() => {
+    if (!active) {
+      bars.forEach((bar) => bar.setValue(0.35));
+      return;
+    }
+
+    const animations = bars.map((bar, index) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bar, {
+            toValue: 1,
+            duration: 220 + index * 60,
+            useNativeDriver: false,
+          }),
+          Animated.timing(bar, {
+            toValue: 0.3,
+            duration: 220 + index * 60,
+            useNativeDriver: false,
+          }),
+        ])
+      )
+    );
+
+    const group = Animated.stagger(70, animations);
+    group.start();
+
+    return () => {
+      group.stop();
+      bars.forEach((bar) => bar.stopAnimation());
+    };
+  }, [active, bars]);
+
+  return (
+    <View style={styles.waveRow}>
+      {bars.map((bar, index) => (
+        <Animated.View
+          key={index}
+          style={[
+            styles.waveBar,
+            {
+              height: bar.interpolate({
+                inputRange: [0, 1],
+                outputRange: [10, 32],
+              }),
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+};
 
 export default function DecisionInputScreen({ navigation, route }) {
   const preset = route?.params?.preset;
+  const { user, isFree, remainingDecisions, incrementDecisionUsage, themeMode, strings, hapticsEnabled } = useApp();
+  const gradient = themeMode === 'dark' ? ['#0f172a', '#1e1b4b'] : ['#f7f3ff', '#eef2ff'];
+  const isDark = themeMode === 'dark';
+  const textColor = isDark ? Colors.white : Colors.textDark;
+  const secondaryColor = isDark ? Colors.textSoft : Colors.textMid;
+  const chatKey = `${CHAT_STORAGE_PREFIX}_${user?.id || 'guest'}`;
+
   const [input, setInput] = useState(preset || '');
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const { user, remainingDecisions, isFree, incrementDecisionUsage, themeMode, strings } = useApp();
-  const gradient = themeMode === 'dark' ? ['#0f172a', '#1e1b4b'] : ['#f7f3ff', '#eef2ff'];
+  const [isOffline, setIsOffline] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceSeconds, setVoiceSeconds] = useState(0);
+  const recordTimer = useRef(null);
 
-  const canSubmit = useMemo(() => input.trim().length > 3, [input]);
+  const canSubmit = useMemo(() => input.trim().length > 1, [input]);
 
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const offline = state.isConnected === false || state.isInternetReachable === false;
+      setIsOffline(offline);
+    });
+
+    NetInfo.fetch().then((state) => {
+      const offline = state.isConnected === false || state.isInternetReachable === false;
+      setIsOffline(offline);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const loadChat = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(chatKey);
+        if (saved) {
+          setMessages(JSON.parse(saved));
+        }
+      } catch {}
+    };
+
+    loadChat();
+  }, [chatKey]);
+
+  useEffect(() => {
+    AsyncStorage.setItem(chatKey, JSON.stringify(messages)).catch(() => {});
+  }, [chatKey, messages]);
+
+  useEffect(() => {
+    if (preset) {
+      setInput(preset);
+    }
+  }, [preset]);
+
+  useEffect(() => () => {
+    if (recordTimer.current) clearInterval(recordTimer.current);
+  }, []);
+
+  const createMessage = (role, text, meta = {}) => ({
+    id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    role,
+    text,
+    ...meta,
+  });
+
+  const sendVoiceMessage = async (durationSeconds) => {
+    if (durationSeconds <= 0) return;
+
+    if (Platform.OS === 'ios' && Alert.prompt) {
+      Alert.prompt(
+        'Voice Input',
+        'Describe your decision request in text so we can send it.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Submit',
+            onPress: (voiceText) => {
+              if (voiceText && voiceText.trim()) {
+                Speech.speak('Voice message sent');
+                handleSubmit('voice', voiceText.trim());
+              }
+            },
+          },
+        ],
+        'plain-text'
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Voice input',
+      'Text voice request manually in the input box and press send. Voice recognition is not available in this build.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const startRecording = () => {
+    if (hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    Speech.speak('Starting voice recording');
+    setIsRecording(true);
+    setVoiceSeconds(0);
+    recordTimer.current = setInterval(() => {
+      setVoiceSeconds((current) => current + 1);
+    }, 1000);
+  };
+
+  const cancelRecording = () => {
+    if (recordTimer.current) clearInterval(recordTimer.current);
+    setIsRecording(false);
+    setVoiceSeconds(0);
+  };
+
+  const stopRecording = () => {
+    if (recordTimer.current) clearInterval(recordTimer.current);
+    setIsRecording(false);
+    const duration = voiceSeconds;
+    setVoiceSeconds(0);
+    sendVoiceMessage(duration);
+  };
+
+  const clearConversation = async () => {
+    setMessages([]);
+    await AsyncStorage.removeItem(chatKey);
+  };
+
+  const handleSubmit = async (submissionMode = 'text', overrideInput) => {
+    const normalizedInput = (overrideInput ?? input).trim();
+    if (!normalizedInput) return;
 
     if (!user?.id) {
       navigation.replace('AuthEntry');
       return;
     }
 
-    if (isFree && remainingDecisions <= 0) {
+    if (!isOffline && isFree && remainingDecisions <= 0) {
       setShowUpgrade(true);
       return;
     }
 
-    setLoading(true);
-
     try {
+      if (isOffline) {
+        setMessages((prev) => [
+          ...prev,
+          createMessage(
+            'assistant',
+            'App is offline. Reconnect to send a decision request. While waiting, you can keep using Calm, Focus, Mood, Daily Guidance, and Micro Tasks.'
+          ),
+        ]);
+        return;
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        createMessage('user', normalizedInput, { mode: submissionMode }),
+      ]);
+      if (submissionMode === 'text') {
+        setInput('');
+      }
+      Speech.speak('Sending decision');
+      setLoading(true);
+
       const res = await decisionsAPI.make({
-        user_input: input.trim(),
+        user_input: normalizedInput,
         user_id: String(user.id),
         tokens_used: 1,
       });
 
       await incrementDecisionUsage();
+      setMessages((prev) => [
+        ...prev,
+        createMessage('assistant', res?.response || 'Handled returned an empty answer.'),
+      ]);
+    } catch {
+      const offlineReply = buildOfflineDecisionReply({ input: normalizedInput, mode: submissionMode });
+      await addLocalDecision({
+        userId: user.id,
+        inputText: normalizedInput,
+        responseText: offlineReply,
+        mode: submissionMode,
+      });
 
-      navigation.navigate('DecisionOutput', {
-        decisionId: res?.decision_id,
-        response: res?.response,
-        original: input.trim(),
-      });
-    } catch (err) {
-      navigation.navigate('DecisionOutput', {
-        decisionId: null,
-        response: err.message || 'Something went wrong',
-        original: input.trim(),
-        error: true,
-      });
+      setMessages((prev) => [...prev, createMessage('assistant', offlineReply)]);
     } finally {
       setLoading(false);
+      setVoiceSeconds(0);
     }
   };
 
   return (
     <LinearGradient colors={gradient} style={styles.container}>
+      <TopBar title={strings.newDecision || 'New decision'} onBack={() => navigation.goBack()} tintColor={textColor} />
+
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <TopBar title={strings.newDecision || 'New decision'} onBack={() => navigation.goBack()} />
-        <Text style={styles.title}>What decision do you need help with?</Text>
-        <Text style={styles.sub}>Describe the situation, and we&apos;ll guide you.</Text>
-
-        <InputField
-          label="Your input"
-          value={input}
-          onChangeText={setInput}
-          placeholder="Type your question or situation..."
-          multiline
-        />
-
-        {isFree && remainingDecisions <= 2 ? (
-          <Text style={styles.warn}>
-            You are close to your free limit ({remainingDecisions} left today).
-          </Text>
-        ) : null}
-
-        <PrimaryButton
-          title={strings.submitDecision || 'Submit decision'}
-          onPress={handleSubmit}
-          loading={loading}
-          disabled={!canSubmit}
-        />
-
-        <GhostButton
-          title="View history"
-          onPress={() => navigation.navigate('DecisionHistory')}
-          leftIcon={<Ionicons name="time" size={16} color={Colors.primary} />}
-        />
+        <View style={styles.messageList}>
+          {messages.map((message) => (
+            <View
+              key={message.id}
+              style={[
+                styles.messageBubble,
+                message.role === 'user' ? styles.userBubble : styles.assistantBubble,
+                isDark && message.role === 'assistant' && styles.darkCard,
+              ]}
+            >
+              <View style={styles.messageRow}>
+                {message.mode === 'voice' ? (
+                  <Ionicons
+                    name="mic"
+                    size={14}
+                    color={message.role === 'user' ? Colors.white : Colors.primary}
+                    style={styles.messageIcon}
+                  />
+                ) : null}
+                <Text style={[styles.messageText, { color: message.role === 'user' ? Colors.white : textColor }]}>
+                  {message.text}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
       </ScrollView>
 
-      <Modal transparent visible={showUpgrade} animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <View style={styles.upgradeHeader}>
-              <Text style={styles.upgradeIcon}>⭐</Text>
-              <Text style={styles.modalTitle}>Unlock Pro</Text>
-            </View>
-            <Text style={styles.modalText}>
-              You&apos;ve made great progress! Ready to decide unlimited?
-            </Text>
-            <View style={styles.featureList}>
-              <Text style={styles.featureItem}>✓ Unlimited decisions daily</Text>
-              <Text style={styles.featureItem}>✓ Priority support</Text>
-              <Text style={styles.featureItem}>✓ Advanced decision insights</Text>
-            </View>
-            <PrimaryButton
-              title="View Plans"
-              onPress={() => {
-                setShowUpgrade(false);
-                navigation.getParent()?.navigate('Profile', { screen: 'Subscription' });
-              }}
-            />
-            <GhostButton
-              title="Maybe later"
-              onPress={() => setShowUpgrade(false)}
+      <View style={styles.bottomContainer}>
+        <View style={[styles.composerCard, Shadows.card, isDark && styles.darkCard]}>
+          <View style={styles.inputShell}>
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder="Enter decision message"
+              placeholderTextColor={Colors.placeholder}
+              multiline
+              style={[styles.composerInput, { color: textColor }]}
             />
           </View>
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.voiceButton} onPress={startRecording} activeOpacity={0.85}>
+              <Ionicons name="mic" size={18} color={Colors.white} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sendButton, (!canSubmit || loading) && styles.sendButtonDisabled]}
+              onPress={() => handleSubmit('text')}
+              disabled={!canSubmit || loading}
+              activeOpacity={0.85}
+            >
+              <Ionicons name={loading ? 'hourglass' : 'arrow-up'} size={18} color={Colors.white} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.utilityRow}>
+            <GhostButton title="View history" onPress={() => navigation.navigate('DecisionHistory')} style={styles.utilityButton} />
+            <GhostButton title="Clear chat" onPress={clearConversation} style={styles.utilityButton} />
+          </View>
         </View>
-      </Modal>
+
+        {isRecording ? (
+          <View style={[styles.recordingCard, Shadows.card, isDark && styles.darkCard]}>
+            <View style={styles.recordingRow}>
+              <View style={styles.recordingCopy}>
+                <Text style={[styles.voiceTitle, { color: textColor }]}>Listening</Text>
+                <Text style={[styles.voiceSub, { color: secondaryColor }]}>{voiceSeconds}s</Text>
+              </View>
+              <View style={styles.recordingWaveWrap}>
+                <VoiceWave active={true} />
+              </View>
+              <TouchableOpacity style={styles.voiceActionGhost} onPress={cancelRecording} activeOpacity={0.8}>
+                <Ionicons name="close" size={18} color={Colors.textDark} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.voiceActionPrimary} onPress={stopRecording} activeOpacity={0.8}>
+                <Ionicons name="arrow-up" size={18} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+      </View>
+
+      {showUpgrade ? (
+        <View style={styles.modalBackdrop}>
+          <View style={styles.upgradeCard}>
+            <Text style={styles.modalTitle}>Connect to the internet</Text>
+            <Text style={styles.modalSub}>
+              You reached your online decision limit for now. Reconnect later or continue using the app until network-backed decisions are available again.
+            </Text>
+            <PrimaryButton title="Close" onPress={() => setShowUpgrade(false)} />
+          </View>
+        </View>
+      ) : null}
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: {
-    padding: 24,
-    paddingBottom: 120,
+  content: { padding: 24, paddingBottom: 140, gap: 16 },
+  darkCard: {
+    backgroundColor: 'rgba(15,23,42,0.9)',
   },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.textDark, marginBottom: 6 },
-  sub: { color: Colors.textSoft, marginBottom: 18 },
-  sliderBlock: { marginBottom: 18 },
-  sliderLabel: { color: Colors.textSoft, marginBottom: 6, fontWeight: '600' },
-  levelRow: { flexDirection: 'row', gap: 8 },
-  levelDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.card,
-  },
-  levelActive: {
-    borderColor: Colors.primary,
-    backgroundColor: 'rgba(159,71,241,0.12)',
-  },
-  levelText: { color: Colors.textDark, fontWeight: '700', fontSize: 12 },
-  warn: { color: Colors.danger, marginBottom: 12, fontWeight: '600' },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalCard: {
-    backgroundColor: Colors.card,
-    borderRadius: Radius.lg,
-    padding: 20,
-    width: '100%',
+  messageList: {
     gap: 12,
   },
-  upgradeHeader: {
-    alignItems: 'center',
-    marginBottom: 12,
+  messageBubble: {
+    borderRadius: Radius.lg,
+    padding: 14,
+    borderWidth: 1,
   },
-  upgradeIcon: {
-    fontSize: 40,
-    marginBottom: 8,
+  assistantBubble: {
+    backgroundColor: Colors.card,
+    borderColor: Colors.cardBorder,
   },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.textDark, textAlign: 'center' },
-  modalText: { color: Colors.textSoft, lineHeight: 20, textAlign: 'center' },
-  featureList: {
-    backgroundColor: 'rgba(159,71,241,0.08)',
-    borderRadius: Radius.md,
+  userBubble: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primaryLight,
+    marginLeft: 36,
+  },
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  messageIcon: {
+    marginRight: 8,
+    marginTop: 3,
+  },
+  messageText: {
+    fontSize: 14,
+    lineHeight: 21,
+    flex: 1,
+  },
+  composerCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
     padding: 12,
-    marginVertical: 12,
-    gap: 8,
   },
-  featureItem: {
-    color: Colors.primary,
+  inputShell: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  composerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  composerInput: {
+    minHeight: 42,
+    maxHeight: 84,
+    fontSize: 15,
+    lineHeight: 21,
+    textAlignVertical: 'top',
+    paddingTop: 2,
+    paddingBottom: 2,
+  },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 24,
+    paddingBottom: 34,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 12,
+  },
+  voiceButton: {
+    flex: 1,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: Colors.textDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButton: {
+    flex: 1,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recordingCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 12,
+    marginTop: 12,
+  },
+  sendButtonDisabled: {
+    opacity: 0.45,
+  },
+  recordingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  recordingCopy: { minWidth: 68 },
+  recordingWaveWrap: { flex: 1 },
+  voiceTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  voiceSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  waveRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    minHeight: 28,
+  },
+  waveBar: {
+    width: 6,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primary,
+  },
+  voiceActionGhost: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  voiceActionPrimary: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  utilityRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  utilityButton: {
+    flex: 1,
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(13,10,25,0.55)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  upgradeCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 18,
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  modalSub: {
+    color: Colors.textSoft,
     fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 20,
   },
-  modalLink: { color: Colors.primary, fontWeight: '600', textAlign: 'center', marginTop: 4 },
 });

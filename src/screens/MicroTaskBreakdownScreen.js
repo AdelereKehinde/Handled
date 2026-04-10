@@ -8,6 +8,13 @@ import TopBar from '../components/TopBar';
 import { useApp } from '../context/AppContext';
 import { Colors, Radius, Shadows } from '../theme';
 
+const STAGES = [
+  { value: 0, label: 'To do' },
+  { value: 1, label: 'Started' },
+  { value: 2, label: 'Review' },
+  { value: 3, label: 'Done' },
+];
+
 export default function MicroTaskBreakdownScreen({ navigation }) {
   const { themeMode, strings, hapticsEnabled } = useApp();
   const [tasks, setTasks] = useState([]);
@@ -33,7 +40,16 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
 
   const loadTasks = async () => {
     const saved = JSON.parse(await AsyncStorage.getItem('microTasks')) || [];
-    setTasks(saved);
+    const normalized = saved.map((task) => ({
+      ...task,
+      completed: Boolean(task.completed),
+      subtasks: (task.subtasks || []).map((subtask) => ({
+        ...subtask,
+        stage: typeof subtask.stage === 'number' ? subtask.stage : subtask.completed ? 3 : 0,
+        completed: typeof subtask.stage === 'number' ? subtask.stage >= 3 : Boolean(subtask.completed),
+      })),
+    }));
+    setTasks(normalized);
   };
 
   const saveTasks = async (updated) => {
@@ -75,6 +91,7 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
     const subtask = {
       id: Date.now().toString(),
       name: newSubtask,
+      stage: 0,
       completed: false,
     };
 
@@ -93,10 +110,12 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
     }
   };
 
-  const toggleSubtask = (subtaskId) => {
-    const updated = subtasks.map((s) =>
-      s.id === subtaskId ? { ...s, completed: !s.completed } : s
-    );
+  const advanceSubtaskStage = (subtaskId) => {
+    const updated = subtasks.map((s) => {
+      if (s.id !== subtaskId) return s;
+      const nextStage = s.stage >= 3 ? 3 : s.stage + 1;
+      return { ...s, stage: nextStage, completed: nextStage >= 3 };
+    });
     setSubtasks(updated);
 
     const taskUpdate = tasks.map((t) =>
@@ -110,10 +129,36 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
     }
   };
 
+  const regressSubtaskStage = (subtaskId) => {
+    const updated = subtasks.map((s) => {
+      if (s.id !== subtaskId) return s;
+      const nextStage = s.stage <= 0 ? 0 : s.stage - 1;
+      return { ...s, stage: nextStage, completed: nextStage >= 3 };
+    });
+    setSubtasks(updated);
+
+    const taskUpdate = tasks.map((t) =>
+      t.id === selectedTask.id ? { ...t, subtasks: updated } : t
+    );
+    saveTasks(taskUpdate);
+    setSelectedTask({ ...selectedTask, subtasks: updated });
+  };
+
+  const deleteSubtask = (subtaskId) => {
+    const updated = subtasks.filter((subtask) => subtask.id !== subtaskId);
+    setSubtasks(updated);
+
+    const taskUpdate = tasks.map((t) =>
+      t.id === selectedTask.id ? { ...t, subtasks: updated } : t
+    );
+    saveTasks(taskUpdate);
+    setSelectedTask({ ...selectedTask, subtasks: updated });
+  };
+
   const markTaskComplete = async () => {
     if (!selectedTask) return;
 
-    const allComplete = subtasks.every((s) => s.completed);
+    const allComplete = subtasks.every((s) => s.stage >= 3);
 
     if (!allComplete) {
       Alert.alert('Almost there!', 'Complete all subtasks first 🎉');
@@ -144,7 +189,9 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
   };
 
   const progress =
-    subtasks.length > 0 ? (subtasks.filter((s) => s.completed).length / subtasks.length) * 100 : 0;
+    subtasks.length > 0
+      ? (subtasks.reduce((total, subtask) => total + (subtask.stage || 0), 0) / (subtasks.length * 3)) * 100
+      : 0;
 
   return (
     <LinearGradient colors={gradient} style={styles.container}>
@@ -187,18 +234,21 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
               tasks
                 .filter((t) => !t.completed)
                 .map((task) => {
-                  const completed = task.subtasks.filter((s) => s.completed).length;
+                  const completed = task.subtasks.filter((s) => (s.stage || 0) >= 3).length;
                   const total = task.subtasks.length;
-                  const taskProgress = total > 0 ? (completed / total) * 100 : 0;
+                  const taskProgress =
+                    total > 0
+                      ? (task.subtasks.reduce((sum, subtask) => sum + (subtask.stage || 0), 0) / (total * 3)) * 100
+                      : 0;
 
                   return (
                     <TouchableOpacity
                       key={task.id}
                       onPress={() => setSelectedTask(task)}
                       style={[styles.taskCard, Shadows.card, isDark && styles.cardDark]}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.taskHeader}>
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.taskHeader}>
                         <View style={styles.taskInfo}>
                           <Text style={[styles.taskName, { color: textColor }]}>{task.name}</Text>
                           <Text style={[styles.taskSubtext, { color: secondaryColor }]}>
@@ -265,6 +315,13 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
                   {progress.toFixed(0)}%
                 </Text>
               </View>
+              <View style={styles.stageLegend}>
+                {STAGES.map((stage) => (
+                  <View key={stage.value} style={styles.stagePill}>
+                    <Text style={styles.stagePillText}>{stage.label}</Text>
+                  </View>
+                ))}
+              </View>
               <View
                 style={[
                   styles.progressBarLarge,
@@ -303,31 +360,54 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
             ) : (
               <>
                 {subtasks.map((subtask) => (
-                  <TouchableOpacity
+                  <View
                     key={subtask.id}
-                    onPress={() => toggleSubtask(subtask.id)}
                     style={[
                       styles.subtaskItem,
                       isDark && styles.subtaskItemDark,
                       subtask.completed && styles.subtaskCompleted,
                     ]}
-                    activeOpacity={0.7}
                   >
-                    <View style={styles.checkbox}>
-                      {subtask.completed && (
-                        <Ionicons name="checkmark" size={14} color={Colors.white} />
-                      )}
-                    </View>
-                    <Text
-                      style={[
-                        styles.subtaskName,
-                        { color: textColor },
-                        subtask.completed && styles.subtaskNameCompleted,
-                      ]}
+                    <TouchableOpacity
+                      onPress={() => advanceSubtaskStage(subtask.id)}
+                      style={styles.subtaskMainAction}
+                      activeOpacity={0.7}
                     >
-                      {subtask.name}
-                    </Text>
-                  </TouchableOpacity>
+                      <View style={styles.checkbox}>
+                        {subtask.stage >= 3 && (
+                          <Ionicons name="checkmark" size={14} color={Colors.white} />
+                        )}
+                      </View>
+                      <View style={styles.subtaskCopy}>
+                        <Text
+                          style={[
+                            styles.subtaskName,
+                            { color: textColor },
+                            subtask.completed && styles.subtaskNameCompleted,
+                          ]}
+                        >
+                          {subtask.name}
+                        </Text>
+                        <Text style={[styles.subtaskStage, { color: secondaryColor }]}>
+                          {STAGES[subtask.stage || 0].label}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => regressSubtaskStage(subtask.id)}
+                      style={styles.stageBackButton}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="remove" size={14} color={Colors.textSoft} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => deleteSubtask(subtask.id)}
+                      style={styles.deleteSubtaskButton}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="trash-outline" size={14} color={Colors.danger} />
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </>
             )}
@@ -341,7 +421,7 @@ export default function MicroTaskBreakdownScreen({ navigation }) {
               >
                 <Ionicons name="checkmark-circle" size={24} color={Colors.white} />
                 <Text style={styles.completeButtonText}>
-                  {progress === 100 ? 'Mark as Done' : 'Complete all steps first'}
+                  {progress === 100 ? 'Mark task as done' : 'Move every step to Done first'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -434,6 +514,25 @@ const styles = StyleSheet.create({
   progressStat: { marginBottom: 12 },
   progressLabel: { fontSize: 12, marginBottom: 6 },
   progressValue: { fontSize: 24, fontWeight: '700' },
+  stageLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  stagePill: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  stagePillText: {
+    color: Colors.textMid,
+    fontSize: 11,
+    fontWeight: '700',
+  },
   progressBarLarge: { height: 6, borderRadius: 3, overflow: 'hidden' },
   progressFillLarge: { height: 6 },
   subtaskItem: {
@@ -450,6 +549,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15,23,42,0.9)',
   },
   subtaskCompleted: { opacity: 0.6 },
+  subtaskMainAction: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   checkbox: {
     width: 24,
     height: 24,
@@ -461,8 +565,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  subtaskCopy: { flex: 1 },
   subtaskName: { fontSize: 13, fontWeight: '500', flex: 1 },
+  subtaskStage: { fontSize: 11, marginTop: 4, fontWeight: '600' },
   subtaskNameCompleted: { textDecorationLine: 'line-through' },
+  stageBackButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  deleteSubtaskButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
   completeButton: {
     flexDirection: 'row',
     backgroundColor: Colors.primary,

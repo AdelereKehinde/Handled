@@ -5,7 +5,7 @@ import { Colors, Radius, Shadows } from '../theme';
 export default function DecisionCard({ text }) {
   return (
     <View style={[styles.card, Shadows.glowCyan]}>
-      <Text style={styles.text} numberOfLines={10} adjustsFontSizeToFit>
+      <Text style={styles.text}>
         {text}
       </Text>
     </View>
@@ -20,14 +20,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(159,71,241,0.25)',
     paddingVertical: 24,
     paddingHorizontal: 20,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
   text: {
     color: Colors.textDark,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-    fontWeight: '600',
+    fontSize: 20,
+    lineHeight: 31,
+    textAlign: 'left',
+    fontWeight: '800',
+    width: '100%',
   },
 });

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { decodeToken, getToken, usersAPI } from '../services/api';
+import { decodeToken, getToken, isNetworkError, usersAPI } from '../services/api';
 
 const AppContext = createContext(null);
 
@@ -11,6 +11,7 @@ const LANG_KEY = 'app_language';
 const HAPTICS_KEY = 'haptics_enabled';
 const REMINDER_ENABLED_KEY = 'daily_reminder_enabled';
 const REMINDER_TIME_KEY = 'daily_reminder_time';
+const USER_CACHE_PREFIX = 'cached_user_profile';
 
 const LANGUAGE_OPTIONS = [
   { code: 'en', label: 'English' },
@@ -441,6 +442,7 @@ const getTodayKey = () => {
 };
 
 const getQuotaKey = (userId) => `decision_quota_${userId}_${getTodayKey()}`;
+const getUserCacheKey = (userId) => `${USER_CACHE_PREFIX}_${userId}`;
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -468,11 +470,28 @@ export const AppProvider = ({ children }) => {
 
       const profile = await usersAPI.userById(userId);
       setUser(profile);
+      await AsyncStorage.setItem(getUserCacheKey(userId), JSON.stringify(profile));
 
       const quotaKey = getQuotaKey(userId);
       const usedRaw = await AsyncStorage.getItem(quotaKey);
       setDecisionsUsed(usedRaw ? Number(usedRaw) : 0);
-    } catch {
+    } catch (error) {
+      const token = await getToken();
+      const decoded = decodeToken(token);
+      const userId = decoded?.user_id || decoded?.sub || decoded?.id;
+
+      if (userId && isNetworkError(error)) {
+        const cachedProfile = await AsyncStorage.getItem(getUserCacheKey(userId));
+        if (cachedProfile) {
+          setUser(JSON.parse(cachedProfile));
+
+          const quotaKey = getQuotaKey(userId);
+          const usedRaw = await AsyncStorage.getItem(quotaKey);
+          setDecisionsUsed(usedRaw ? Number(usedRaw) : 0);
+          return;
+        }
+      }
+
       setUser(null);
       setDecisionsUsed(0);
     } finally {

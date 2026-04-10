@@ -6,18 +6,7 @@ import TopBar from '../components/TopBar';
 import { PrimaryButton } from '../components/UI';
 import { useApp } from '../context/AppContext';
 import { decisionsAPI } from '../services/api';
-import { Colors, Radius, Shadows, Spacing } from '../theme';
-
-const QUICK_SUGGESTIONS = [
-  'Should I respond now or wait?',
-  'What feels most aligned with my values?',
-  'How can I make this decision with clarity?',
-];
-
-const SUPPORT_CARDS = [
-  { title: 'Guided pause', subtitle: 'Take a quiet moment to breathe.' },
-  { title: 'Mindful focus', subtitle: 'Break your day into gentle steps.' },
-];
+import { Colors, Radius, Shadows } from '../theme';
 
 export default function HomeScreen({ navigation }) {
   const { user, remainingDecisions, isFree, themeMode, strings } = useApp();
@@ -52,12 +41,12 @@ export default function HomeScreen({ navigation }) {
         <TopBar
           title=""
           onBack={null}
-          rightIcon="notifications"
           tintColor={themeMode === 'dark' ? Colors.white : Colors.textDark}
-          onRightPress={() => {
+          navigation={navigation}
+          showNotifications={true}
+          onNotificationsPress={() => {
             navigation.getParent()?.navigate('Notifications') || navigation.navigate('Notifications');
           }}
-          navigation={navigation}
         />
 
         <View style={styles.header}>
@@ -92,41 +81,35 @@ export default function HomeScreen({ navigation }) {
           leftIcon={<Ionicons name="flash" size={18} color={Colors.white} />}
         />
 
-        <View style={[styles.infoCard, Shadows.card]}>
-          <Text style={styles.infoTitle}>How handled helps</Text>
-          <Text style={styles.infoText}>
-            Handled is a decision engine for your mind. It helps you decide clearly and thoughtfully, especially for those with ADHD or anxiety.
-          </Text>
-        </View>
-
-        <Text style={styles.sectionTitle}>{strings.quickSuggestions || 'Quick decisions'}</Text>
+        <Text style={styles.sectionTitle}>Recent decisions</Text>
         <View style={styles.quickGrid}>
-          {QUICK_SUGGESTIONS.map((item) => (
-            <TouchableOpacity
-              key={item}
-              style={[styles.quickCard, Shadows.card]}
-              activeOpacity={0.85}
-              onPress={() =>
-                navigation.navigate('Decisions', {
-                  screen: 'DecisionInput',
-                  params: { preset: item },
-                })
-              }
-            >
-              <Text style={styles.quickText}>{item}</Text>
-              <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.sectionTitle}>Calm practices</Text>
-        <View style={styles.quickGrid}>
-          {SUPPORT_CARDS.map((item) => (
-            <View key={item.title} style={[styles.toolCard, Shadows.card]}>
-              <Text style={styles.toolTitle}>{item.title}</Text>
-              <Text style={styles.toolSub}>{item.subtitle}</Text>
+          {recent.length === 0 ? (
+            <View style={[styles.toolCard, Shadows.card]}>
+              <Text style={styles.toolTitle}>No synced decisions yet</Text>
+              <Text style={styles.toolSub}>Your latest guided decisions will appear here.</Text>
             </View>
-          ))}
+          ) : (
+            recent.map((item) => (
+              <TouchableOpacity
+                key={String(item.id)}
+                style={[styles.toolCard, Shadows.card]}
+                activeOpacity={0.85}
+                onPress={() =>
+                  navigation.navigate('Decisions', {
+                    screen: 'DecisionOutput',
+                    params: {
+                      decisionId: item.id,
+                      response: item.ai_response,
+                      original: item.input_text,
+                    },
+                  })
+                }
+              >
+                <Text style={styles.toolTitle} numberOfLines={1}>{item.input_text}</Text>
+                <Text style={styles.toolSub} numberOfLines={2}>{item.ai_response}</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </LinearGradient>
@@ -157,19 +140,6 @@ const styles = StyleSheet.create({
   greetingBadgeText: { color: Colors.white, fontSize: 11, fontWeight: '700' },
   username: { color: Colors.textDark, fontSize: 26, fontWeight: '700' },
   quota: { color: Colors.primary, fontSize: 12, marginTop: 4, fontWeight: '600' },
-  orbWrap: { alignItems: 'center', marginTop: 10, marginBottom: 24, gap: 10 },
-  orbLabel: { color: Colors.textSoft, fontSize: 13, fontWeight: '500' },
-  calmPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: Radius.full,
-    marginTop: 6,
-  },
-  calmText: { color: Colors.white, fontWeight: '600', fontSize: 12 },
   heroCard: {
     borderRadius: Radius.xl,
     padding: 22,
@@ -194,33 +164,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     borderRadius: Radius.full,
   },
-  infoCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: 16,
-    marginBottom: 20,
-  },
-  infoTitle: { color: Colors.textDark, fontWeight: '700', marginBottom: 6 },
-  infoText: { color: Colors.textMid, fontSize: 13, lineHeight: 20 },
   primaryBtn: { marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textDark, marginBottom: 12 },
   quickGrid: { gap: 12, marginBottom: 20 },
-  quickCard: {
-    backgroundColor: Colors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  quickText: { color: Colors.textDark, fontWeight: '600', fontSize: 14, flex: 1, marginRight: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  link: { color: Colors.primary, fontSize: 12, fontWeight: '600' },
-  recentWrap: { marginTop: 12, gap: 10 },
   toolCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
@@ -230,14 +176,4 @@ const styles = StyleSheet.create({
   },
   toolTitle: { color: Colors.textDark, fontWeight: '700', marginBottom: 4 },
   toolSub: { color: Colors.textSoft, fontSize: 12 },
-  recentCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: Spacing.md,
-  },
-  recentTitle: { color: Colors.textDark, fontWeight: '600', marginBottom: 4 },
-  recentSub: { color: Colors.textSoft, fontSize: 12, lineHeight: 18 },
-  empty: { color: Colors.textSoft, fontSize: 13 },
 });

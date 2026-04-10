@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '../theme';
-import { InputField, PrimaryButton } from '../components/UI';
-import { bugReportsAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
+import { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
 import TopBar from '../components/TopBar';
+import { InputField, PrimaryButton } from '../components/UI';
+import { useApp } from '../context/AppContext';
+import { bugReportsAPI } from '../services/api';
+import { Colors } from '../theme';
 
 export default function ReportBugScreen({ navigation }) {
   const { user } = useApp();
@@ -21,7 +21,11 @@ export default function ReportBugScreen({ navigation }) {
         error_message: message,
         user_id: user?.id || null,
       });
+      Alert.alert('Success', 'Thank you for your bug report. We appreciate your feedback!');
       navigation.goBack();
+    } catch (error) {
+      console.error('Bug report error:', error);
+      Alert.alert('Error', error.message || 'Failed to submit bug report. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -1,12 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import React, { useMemo, useState } from 'react';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Colors, Radius, Shadows } from '../theme';
-import { decisionsAPI } from '../services/api';
-import { useApp } from '../context/AppContext';
 import TopBar from '../components/TopBar';
 import { InputField } from '../components/UI';
+import { useApp } from '../context/AppContext';
+import { decisionsAPI } from '../services/api';
+import { Colors, Radius, Shadows } from '../theme';
+import { clearLocalDecisions, listLocalDecisions, removeLocalDecision } from '../utils/localDecisions';
 
 export default function DecisionHistoryScreen({ navigation }) {
   const { user, themeMode, strings } = useApp();
@@ -20,20 +22,43 @@ export default function DecisionHistoryScreen({ navigation }) {
     setLoading(true);
 
     try {
-      const res = await decisionsAPI.history(user.id);
-      setHistory(Array.isArray(res) ? res : []);
+      const [remote, local] = await Promise.all([
+        decisionsAPI.history(user.id).catch(() => []),
+        listLocalDecisions(user.id),
+      ]);
+
+      const merged = [...(local || []), ...(Array.isArray(remote) ? remote : [])].sort(
+        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      );
+
+      setHistory(merged);
+    } catch (error) {
+      console.error('Load history error:', error);
+      Alert.alert('Error', error.message || 'Failed to load decision history. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    load();
-  }, [user?.id]);
+  useFocusEffect(
+    React.useCallback(() => {
+      load();
+    }, [user?.id])
+  );
 
   const handleDelete = async (id) => {
-    await decisionsAPI.remove(id);
-    setHistory((prev) => prev.filter((item) => item.id !== id));
+    try {
+      if (String(id).startsWith('local-')) {
+        await removeLocalDecision(id);
+      } else {
+        await decisionsAPI.remove(id);
+      }
+      setHistory((prev) => prev.filter((item) => item.id !== id));
+      Alert.alert('Success', 'Decision deleted successfully.');
+    } catch (error) {
+      console.error('Delete error:', error);
+      Alert.alert('Error', error.message || 'Failed to delete decision. Please try again.');
+    }
   };
 
   const handleDeleteAll = async () => {
@@ -42,12 +67,33 @@ export default function DecisionHistoryScreen({ navigation }) {
       {
         text: 'Delete all',
         style: 'destructive',
-        onPress: async () => {
-          const items = [...history];
-          for (const item of items) {
-            await decisionsAPI.remove(item.id);
+          onPress: async () => {
+            try {
+              await Promise.all([
+                decisionsAPI.removeAll(user.id).catch(() => null),
+                clearLocalDecisions(user.id),
+              ]);
+              setHistory([]);
+              Alert.alert('Success', 'All decisions deleted successfully.');
+            } catch (error) {
+            console.error('Delete all error:', error);
+            Alert.alert('Error', error.message || 'Failed to delete all decisions. Please try again.');
+            // Fallback to individual deletion if batch delete fails
+            try {
+              const items = [...history];
+              for (const item of items) {
+                if (String(item.id).startsWith('local-')) {
+                  await removeLocalDecision(item.id);
+                } else {
+                  await decisionsAPI.remove(item.id);
+                }
+              }
+              setHistory([]);
+              Alert.alert('Success', 'All decisions deleted successfully.');
+            } catch (fallbackError) {
+              Alert.alert('Error', 'Failed to delete decisions. Please try again.');
+            }
           }
-          setHistory([]);
         },
       },
     ]);
@@ -99,6 +145,7 @@ export default function DecisionHistoryScreen({ navigation }) {
       <TopBar
         title={strings.decisionHistory || 'Decision history'}
         onBack={() => navigation.goBack()}
+        icon="time"
       />
 
       <View style={styles.header}>

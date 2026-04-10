@@ -74,15 +74,23 @@ export default function ForgotPasswordScreen({ navigation }) {
   const handleReset = async () => {
     const errs = {};
     const otpCode = otp.join('');
+    const trimmedNew = newPassword.trim();
+    const trimmedConfirm = confirmPassword.trim();
+
     if (otpCode.length < OTP_LENGTH) errs.otp = 'Enter all 6 digits';
-    if (!newPassword || newPassword.length < 8) errs.newPassword = 'Minimum 8 characters';
-    if (newPassword !== confirmPassword) errs.confirmPassword = 'Passwords do not match';
+    if (!trimmedNew || trimmedNew.length < 8) errs.newPassword = 'Minimum 8 characters';
+    if (trimmedNew !== trimmedConfirm) errs.confirmPassword = 'Passwords do not match';
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
     setLoading(true);
     try {
-      await authAPI.resetPassword({ email, otp: otpCode, new_password: newPassword });
+      await authAPI.resetPassword({
+        email,
+        otp: otpCode,
+        new_password: trimmedNew,
+        confirm_password: trimmedConfirm,
+      });
       setDone(true);
       Animated.spring(successScale, {
         toValue: 1,

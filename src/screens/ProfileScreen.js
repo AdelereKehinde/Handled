@@ -33,7 +33,7 @@ export default function ProfileScreen({ navigation }) {
   return (
     <LinearGradient colors={gradient} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <TopBar title={strings.profile || 'Profile'} onBack={null} />
+        <TopBar title={strings.profile || 'Profile'} onBack={() => navigation.goBack()} />
         <View style={styles.card}>
           <Text style={styles.name}>{user?.username || 'User'}</Text>
           <Text style={styles.email}>{user?.email}</Text>

@@ -1,7 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
-    Alert,
     Modal,
     ScrollView,
     StyleSheet,
@@ -12,7 +11,6 @@ import {
 } from 'react-native';
 import TopBar from '../components/TopBar';
 import { useApp } from '../context/AppContext';
-import { authAPI, usersAPI } from '../services/api';
 import { Colors, Radius } from '../theme';
 
 const TIME_OPTIONS = [
@@ -57,30 +55,10 @@ export default function SettingsScreen({ navigation }) {
 
   const selectedLanguage = availableLanguages.find((item) => item.code === language)?.label || 'English';
 
-  const handleDeleteAccount = async () => {
-    Alert.alert(
-      'Delete account',
-      'This will remove your account and all your data. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await usersAPI.deleteMe();
-            await authAPI.logout();
-            navigation.replace('AuthEntry');
-          },
-        },
-      ]
-    );
-  };
-
   return (
     <LinearGradient colors={gradient} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <TopBar title={strings.settings || 'Settings'} onBack={() => navigation.goBack()} tintColor={textColor} />
-        <Text style={[styles.title, { color: textColor }]}>{strings.settings || 'Settings'}</Text>
 
         <TouchableOpacity style={[styles.row, styles.cardRow]} onPress={() => setLanguageModalVisible(true)}>
           <View style={styles.rowBody}>
@@ -146,24 +124,11 @@ export default function SettingsScreen({ navigation }) {
         <TouchableOpacity style={[styles.linkRow]} onPress={() => navigation.navigate('PrivacyPolicy')}>
           <Text style={[styles.linkText, { color: textColor }]}>Privacy Policy</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.linkRow]} onPress={() => navigation.navigate('Security')}>
-          <Text style={[styles.linkText, { color: textColor }]}>Security</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={[styles.linkRow]} onPress={() => navigation.navigate('FAQ')}>
           <Text style={[styles.linkText, { color: textColor }]}>FAQs</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.linkRow]} onPress={() => navigation.navigate('Terms')}>
-          <Text style={[styles.linkText, { color: textColor }]}>Terms of Service</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={[styles.linkRow]} onPress={() => navigation.navigate('ReportBug')}>
           <Text style={[styles.linkText, { color: textColor }]}>Report a bug</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.row, styles.cardRow, styles.dangerRow]} onPress={handleDeleteAccount} activeOpacity={0.85}>
-          <View style={styles.rowBody}>
-            <Text style={[styles.rowText, { color: Colors.danger }]}>Delete account</Text>
-            <Text style={[styles.rowDesc, { color: Colors.danger }]}>This cannot be undone</Text>
-          </View>
         </TouchableOpacity>
       </ScrollView>
 
@@ -250,10 +215,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
   },
   linkText: { fontSize: 15, fontWeight: '600' },
-  dangerRow: {
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    marginTop: 18,
-  },
   modalContent: {
     padding: 18,
   },

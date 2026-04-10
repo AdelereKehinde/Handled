@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
@@ -12,6 +13,13 @@ const MOODS = [
   { emoji: '😔', label: 'Struggling', value: 1, color: '#ef4444' },
   { emoji: '😵', label: 'Overwhelmed', value: 0, color: '#8b5cf6' },
 ];
+
+const COPING_STRATEGIES = {
+  5: ['Celebrate your wins! 🎉', 'Share your joy with others', 'Plan something fun', 'Practice gratitude'],
+  3: ['Take a short walk', 'Listen to favorite music', 'Call a friend', 'Do something creative'],
+  1: ['Breathe deeply for 5 minutes', 'Write down your thoughts', 'Reach out for support', 'Do one small task'],
+  0: ['Stop and breathe', 'Step away from triggers', 'Use grounding techniques', 'Ask for immediate help']
+};
 
 export default function MoodDashboardScreen({ navigation }) {
   const { themeMode, strings } = useApp();
@@ -45,10 +53,16 @@ export default function MoodDashboardScreen({ navigation }) {
     const history = JSON.parse(await AsyncStorage.getItem('moodHistory')) || [];
     
     const existingIndex = history.findIndex((entry) => entry.date === today);
+    const moodEntry = {
+      date: today,
+      value: moodValue,
+      timestamp: new Date().toISOString()
+    };
+    
     if (existingIndex >= 0) {
-      history[existingIndex] = { date: today, value: moodValue };
+      history[existingIndex] = moodEntry;
     } else {
-      history.push({ date: today, value: moodValue });
+      history.push(moodEntry);
     }
     
     await AsyncStorage.setItem('moodHistory', JSON.stringify(history.slice(-30)));
@@ -93,6 +107,7 @@ export default function MoodDashboardScreen({ navigation }) {
           title={strings.moodDashboard || 'Mood Dashboard'}
           onBack={() => navigation.goBack()}
           tintColor={textColor}
+          icon="happy"
         />
 
         <Text style={[styles.title, { color: textColor }]}>How are you feeling today?</Text>
@@ -116,18 +131,32 @@ export default function MoodDashboardScreen({ navigation }) {
         </View>
 
         {currentMoodObj && (
-          <View style={[styles.feedbackCard, Shadows.card, isDark && styles.cardDark]}>
-            <Text style={[styles.feedbackEmoji, { fontSize: 40 }]}>{currentMoodObj.emoji}</Text>
-            <Text style={[styles.feedbackText, { color: secondaryColor }]}>
-              {currentMoodObj.value === 5
-                ? "You're thriving! Keep it up! 💜"
-                : currentMoodObj.value === 3
-                ? "You're managing well. Take care of yourself."
-                : currentMoodObj.value === 1
-                ? "It's okay to struggle. You can reach out for support."
-                : "Take a break, breathe, and be kind to yourself."}
-            </Text>
-          </View>
+          <>
+            <View style={[styles.feedbackCard, Shadows.card, isDark && styles.cardDark]}>
+              <Text style={[styles.feedbackEmoji, { fontSize: 40 }]}>{currentMoodObj.emoji}</Text>
+              <Text style={[styles.feedbackText, { color: secondaryColor }]}>
+                {currentMoodObj.value === 5
+                  ? "You're thriving! Keep it up! 💜"
+                  : currentMoodObj.value === 3
+                  ? "You're managing well. Take care of yourself."
+                  : currentMoodObj.value === 1
+                  ? "It's okay to struggle. You can reach out for support."
+                  : "Take a break, breathe, and be kind to yourself."}
+              </Text>
+            </View>
+
+            <View style={[styles.sectionCard, Shadows.card, isDark && styles.cardDark]}>
+              <Text style={[styles.sectionTitle, { color: textColor }]}>Coping strategies</Text>
+              <View style={styles.strategiesContainer}>
+                {COPING_STRATEGIES[currentMoodObj.value]?.map((strategy, index) => (
+                  <View key={index} style={styles.strategyItem}>
+                    <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />
+                    <Text style={[styles.strategyText, { color: secondaryColor }]}>{strategy}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </>
         )}
 
         {stats && (
@@ -246,13 +275,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  historySection: {
-    marginTop: 12,
+  sectionCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 16,
+    marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 12,
+  strategiesContainer: {
+    gap: 8,
+  },
+  strategyItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  strategyText: {
+    fontSize: 13,
+    lineHeight: 18,
+    flex: 1,
   },
   historyItem: {
     flexDirection: 'row',
