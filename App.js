@@ -1,12 +1,12 @@
-import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
 import NetInfo from '@react-native-community/netinfo';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { Animated, StyleSheet } from 'react-native';
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { AppProvider } from './src/context/AppContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { Colors } from './src/theme';
-import { AppProvider } from './src/context/AppContext';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function App() {
   const [bannerState, setBannerState] = useState('online');
@@ -54,20 +54,17 @@ export default function App() {
       <AppProvider>
         <StatusBar style="dark" backgroundColor={Colors.background} />
         <AppNavigator />
-        {/* Offline banner hidden as requested */}
-        {/* {bannerVisible ? (
+        {bannerVisible && bannerState === 'offline' ? (
           <Animated.View
             style={[
               styles.banner,
-              bannerState === 'offline' ? styles.bannerOffline : styles.bannerOnline,
+              styles.bannerOffline,
               { transform: [{ translateY: bannerTranslate }] },
             ]}
           >
-            <Text style={styles.bannerText}>
-              {bannerState === 'offline' ? 'App is offline' : 'Connected'}
-            </Text>
+            <Text style={styles.bannerText}>{'App is offline'}</Text>
           </Animated.View>
-        ) : null} */}
+        ) : null}
       </AppProvider>
     </GestureHandlerRootView>
   );
@@ -86,13 +83,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bannerOffline: {
-    backgroundColor: '#111827',
+    backgroundColor: '#f8fafc',
+    borderColor: '#cbd5e1',
+    borderWidth: 1,
   },
   bannerOnline: {
     backgroundColor: '#10b981',
   },
   bannerText: {
-    color: Colors.white,
+    color: Colors.textDark,
     fontSize: 12,
     fontWeight: '700',
   },

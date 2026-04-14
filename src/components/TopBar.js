@@ -43,6 +43,16 @@ export default function TopBar({ title, onBack, rightIcon, onRightPress, tintCol
           </Text>
         </View>
         <View style={styles.rightIcons}>
+          {showNotifications && (
+            <TouchableOpacity onPress={onNotificationsPress} style={styles.iconBtnSmall} activeOpacity={0.8}>
+              <Ionicons name="notifications" size={18} color={tintColor} />
+            </TouchableOpacity>
+          )}
+          {navigation && (
+            <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.iconBtnSmall} activeOpacity={0.8}>
+              <Ionicons name="menu" size={18} color={tintColor} />
+            </TouchableOpacity>
+          )}
           {user && (
             <TouchableOpacity 
               onPress={() => navigation?.navigate('Profile')} 
@@ -54,17 +64,7 @@ export default function TopBar({ title, onBack, rightIcon, onRightPress, tintCol
               </Text>
             </TouchableOpacity>
           )}
-          {showNotifications && !user && (
-            <TouchableOpacity onPress={onNotificationsPress} style={styles.iconBtnSmall} activeOpacity={0.8}>
-              <Ionicons name="notifications" size={18} color={tintColor} />
-            </TouchableOpacity>
-          )}
-          {navigation && !user && (
-            <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.iconBtnSmall} activeOpacity={0.8}>
-              <Ionicons name="menu" size={18} color={tintColor} />
-            </TouchableOpacity>
-          )}
-          {!navigation && rightIcon && !user && (
+          {!navigation && rightIcon && (
             <TouchableOpacity onPress={onRightPress} style={styles.iconBtnSmall} activeOpacity={0.8}>
               <Ionicons name={rightIcon} size={18} color={tintColor} />
             </TouchableOpacity>

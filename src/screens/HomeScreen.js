@@ -165,6 +165,7 @@ export default function HomeScreen({ navigation }) {
     <LinearGradient colors={gradient} style={styles.container}>
       {/* Top Bar with Hamburger Menu */}
       <TopBar 
+        title=""
         navigation={navigation}
         showNotifications={true}
         onNotificationsPress={() => navigation.navigate('Notifications')}

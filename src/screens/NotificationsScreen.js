@@ -1,13 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Notifications from 'expo-notifications';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import TopBar from '../components/TopBar';
 import { useApp } from '../context/AppContext';
-import { usePushNotifications } from '../hooks/usePushNotifications';
-import { notificationsAPI } from '../services/api';
 import { Colors, Radius, Shadows } from '../theme';
 
 const NOTIFICATION_SETTINGS_KEY = 'notificationSettings';
@@ -59,25 +56,22 @@ export default function NotificationsScreen({ navigation }) {
     focus: { hour: 9, minute: 0 },
     guidance: { hour: 8, minute: 0 },
   });
-  const { expoPushToken, scheduleRecurringNotification, cancelRecurringNotification } = usePushNotifications();
-  const { themeMode, strings, hapticsEnabled } = useApp();
+  const { themeMode, strings } = useApp();
 
   const load = async () => {
-    const [res, saved, localInbox] = await Promise.all([
-      notificationsAPI.list().catch(() => []),
+    const [saved, localInbox] = await Promise.all([
       AsyncStorage.getItem(NOTIFICATION_SETTINGS_KEY),
       AsyncStorage.getItem(LOCAL_INBOX_KEY),
     ]);
 
-    const remoteItems = Array.isArray(res) ? res : [];
     const storedLocalItems = localInbox ? JSON.parse(localInbox) : [];
-    const mergedItems = [...storedLocalItems, ...remoteItems].sort((a, b) => {
+    const sortedItems = storedLocalItems.sort((a, b) => {
       const aTime = new Date(a.created_at || 0).getTime();
       const bTime = new Date(b.created_at || 0).getTime();
       return bTime - aTime;
     });
 
-    setItems(mergedItems);
+    setItems(sortedItems);
 
     if (saved) {
       const parsed = JSON.parse(saved);

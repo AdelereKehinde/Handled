@@ -75,8 +75,7 @@ export default function ProfileScreen({ navigation }) {
         </TouchableOpacity>
 
         <View style={styles.list}>
-          <MenuItem icon="user" label="Edit profile" onPress={() => navigation.navigate('EditProfile')} />
-          <MenuItem icon="lock" label="Change password" onPress={() => navigation.navigate('ChangePassword')} />
+          <MenuItem icon="user" label="Profile details" onPress={() => navigation.navigate('EditProfile')} />
           <MenuItem icon="settings" label="Settings" onPress={() => navigation.navigate('Settings')} />
           <MenuItem icon="log-out" label="Logout" onPress={handleLogout} danger />
         </View>
@@ -94,7 +93,13 @@ const styles = StyleSheet.create({
   profileHeader: {
     alignItems: 'center',
     marginBottom: 32,
-    paddingTop: 20,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.card,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    ...Shadows.card,
   },
   avatar: {
     width: 80,

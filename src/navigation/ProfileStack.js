@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Colors } from '../theme';
 import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
-import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ReportBugScreen from '../screens/ReportBugScreen';
 import SubscriptionScreen from '../screens/SubscriptionScreen';
@@ -19,7 +18,6 @@ export default function ProfileStack() {
     >
       <Stack.Screen name="ProfileHome" component={ProfileScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="ReportBug" component={ReportBugScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
