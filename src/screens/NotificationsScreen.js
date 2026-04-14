@@ -92,27 +92,15 @@ export default function NotificationsScreen({ navigation }) {
 
   useEffect(() => {
     load();
-
-    const unsubscribe = Notifications.addNotificationResponseReceivedListener(({ notification }) => {
-      load();
-    });
-
-    return unsubscribe.remove;
   }, []);
 
   const markRead = async (id) => {
-    const target = items.find((item) => item.id === id);
-
-    if (target?.source === 'local') {
-      const saved = await AsyncStorage.getItem(LOCAL_INBOX_KEY);
-      const parsed = saved ? JSON.parse(saved) : [];
-      const updated = parsed.map((item) => (item.id === id ? { ...item, is_read: true } : item));
-      await AsyncStorage.setItem(LOCAL_INBOX_KEY, JSON.stringify(updated));
-    } else {
-      await notificationsAPI.markRead(id);
-    }
-
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, is_read: true } : item)));
+
+    const saved = await AsyncStorage.getItem(LOCAL_INBOX_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    const updated = parsed.map((item) => (item.id === id ? { ...item, is_read: true } : item));
+    await AsyncStorage.setItem(LOCAL_INBOX_KEY, JSON.stringify(updated));
   };
 
   const persistNotificationSettings = async (nextEnabledTypes, nextScheduledTimes) => {
@@ -126,6 +114,24 @@ export default function NotificationsScreen({ navigation }) {
         guidanceTime: nextScheduledTimes.guidance,
       })
     );
+  };
+
+  const addSampleNotification = async (notifType) => {
+    const newNotif = {
+      id: `${notifType.id}_${Date.now()}`,
+      title: notifType.label,
+      message: `Your ${notifType.label.toLowerCase()} is ready`,
+      created_at: new Date().toISOString(),
+      is_read: false,
+      type: notifType.id,
+    };
+
+    const saved = await AsyncStorage.getItem(LOCAL_INBOX_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    const updated = [newNotif, ...parsed];
+    await AsyncStorage.setItem(LOCAL_INBOX_KEY, JSON.stringify(updated));
+    
+    setItems(updated);
   };
 
   const updateScheduledTime = async (typeId, hour, minute) => {
@@ -149,21 +155,16 @@ export default function NotificationsScreen({ navigation }) {
     };
     setEnabledTypes(newState);
 
-    try {
-      // Schedule or cancel recurring notification
-      if (newState[typeId]) {
-        const time = scheduledTimes[typeId];
-        await scheduleRecurringNotification(typeId, time.hour, time.minute);
-      } else {
-        await cancelRecurringNotification(typeId);
-      }
-    } catch (error) {
-      console.log('Error scheduling/canceling notification:', error);
-      // Still save the toggle state even if scheduling fails
-    }
-
-    // Save settings
+    // Persist to async storage
     await persistNotificationSettings(newState, scheduledTimes);
+
+    // If toggled ON, create a sample notification for that type
+    if (newState[typeId]) {
+      const notifType = NOTIFICATION_TYPES.find(nt => nt.id === typeId);
+      if (notifType) {
+        await addSampleNotification(notifType);
+      }
+    }
   };
 
   const isDark = themeMode === 'dark';
@@ -271,17 +272,6 @@ export default function NotificationsScreen({ navigation }) {
                   </View>
                 </View>
               ))}
-            </View>
-
-            <View style={[styles.pushStatus, isDark && styles.pushStatusDark]}>
-              <Ionicons
-                name={expoPushToken ? 'checkmark-circle' : 'alert-circle'}
-                size={20}
-                color={expoPushToken ? '#10b981' : '#f59e0b'}
-              />
-              <Text style={[styles.pushStatusText, { color: secondaryColor }]}>
-                {expoPushToken ? 'Push notifications enabled' : 'Enable push for remote notifications'}
-              </Text>
             </View>
           </>
         ) : (
