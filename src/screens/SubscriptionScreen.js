@@ -108,7 +108,7 @@ export default function SubscriptionScreen({ navigation }) {
   return (
     <LinearGradient colors={['#fff8ef', '#f4f4ff']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <TopBar title="Plans" onBack={() => navigation.navigate('ProfileHome')} />
+        <TopBar title="Plans" onBack={() => navigation.navigate('ProfileHome')} user={user} />
 
         <View style={styles.hero}>
           <Text style={styles.eyebrow}>Subscription</Text>

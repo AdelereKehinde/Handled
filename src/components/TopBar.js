@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors, Radius, Shadows } from '../theme';
 
-export default function TopBar({ title, onBack, rightIcon, onRightPress, tintColor = Colors.textDark, navigation, showNotifications = false, onNotificationsPress, icon }) {
+export default function TopBar({ title, onBack, rightIcon, onRightPress, tintColor = Colors.textDark, navigation, showNotifications = false, onNotificationsPress, icon, user }) {
   const [menuVisible, setMenuVisible] = useState(false);
 
   const menuItems = [
@@ -43,17 +43,28 @@ export default function TopBar({ title, onBack, rightIcon, onRightPress, tintCol
           </Text>
         </View>
         <View style={styles.rightIcons}>
-          {showNotifications && (
+          {user && (
+            <TouchableOpacity 
+              onPress={() => navigation?.navigate('Profile')} 
+              style={styles.userAvatar} 
+              activeOpacity={0.8}
+            >
+              <Text style={styles.userAvatarText}>
+                {(user.username || 'U').slice(0, 2).toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {showNotifications && !user && (
             <TouchableOpacity onPress={onNotificationsPress} style={styles.iconBtnSmall} activeOpacity={0.8}>
               <Ionicons name="notifications" size={18} color={tintColor} />
             </TouchableOpacity>
           )}
-          {navigation && (
+          {navigation && !user && (
             <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.iconBtnSmall} activeOpacity={0.8}>
               <Ionicons name="menu" size={18} color={tintColor} />
             </TouchableOpacity>
           )}
-          {!navigation && rightIcon && (
+          {!navigation && rightIcon && !user && (
             <TouchableOpacity onPress={onRightPress} style={styles.iconBtnSmall} activeOpacity={0.8}>
               <Ionicons name={rightIcon} size={18} color={tintColor} />
             </TouchableOpacity>
@@ -157,5 +168,17 @@ const styles = StyleSheet.create({
     color: Colors.textDark,
     fontSize: 16,
     fontWeight: '500',
+  },  // User avatar styles
+  userAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-});
+  userAvatarText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },});

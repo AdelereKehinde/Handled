@@ -54,7 +54,8 @@ export default function App() {
       <AppProvider>
         <StatusBar style="dark" backgroundColor={Colors.background} />
         <AppNavigator />
-        {bannerVisible ? (
+        {/* Offline banner hidden as requested */}
+        {/* {bannerVisible ? (
           <Animated.View
             style={[
               styles.banner,
@@ -66,7 +67,7 @@ export default function App() {
               {bannerState === 'offline' ? 'App is offline' : 'Connected'}
             </Text>
           </Animated.View>
-        ) : null}
+        ) : null} */}
       </AppProvider>
     </GestureHandlerRootView>
   );
